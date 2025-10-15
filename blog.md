@@ -1,6 +1,6 @@
 # Deploy Azure Managed Redis with Terraform — AzAPI Today, Native Tomorrow
 
-*By Thomas Findelkind, Redis Developer Advocate*
+*By Thomas Findelkind
 
 > **TL;DR:** Azure Managed Redis is here — a fully managed, Redis Enterprise–powered service. Terraform support is still catching up, but with an AzAPI module, you can deploy today and stay ready for tomorrow's provider updates.
 
@@ -282,5 +282,5 @@ The key benefit: you can start automating Azure Managed Redis deployments today 
 
 ## About the Author
 
-**Thomas Findelkind** is a Developer Advocate at Redis, helping teams architect, automate, and scale with Redis Enterprise in the cloud.  
+**Thomas Findelkind** is a Senior Specialist Solution Architect at Redis, helping teams architect, automate, and scale with Redis Enterprise in the cloud.  
 Follow Thomas on [LinkedIn](https://www.linkedin.com/in/thomasfindelkind) or [GitHub](https://github.com/tfindelkind-redis).
