@@ -32,22 +32,6 @@ Since the azurerm provider doesn't yet support Azure Managed Redis, we can use t
 | **3. Direct API access** | Use Azure REST APIs through Terraform without waiting for provider updates |
 | **4. Working examples** | Ready-to-use examples you can deploy immediately |
 
-## Quick Start with GitHub Codespaces
-
-The fastest way to get started is using the pre-configured development environment:
-
-➡️ **[Open in GitHub Codespaces](https://codespaces.new/tfindelkind-redis/azure-managed-redis-terraform)** ⚡
-
-This gives you:
-- Pre-installed Terraform, Azure CLI, and Redis tools
-- Ready-to-use examples in the `/examples` directory  
-- One-command deployment: `terraform init && terraform apply`
-
-You can also find the full repository here:  
-➡️ [**tfindelkind-redis/azure-managed-redis-terraform**](https://github.com/tfindelkind-redis/azure-managed-redis-terraform)
-
----
-
 ## Architecture Overview
 
 A typical Azure Managed Redis setup consists of:
@@ -141,19 +125,6 @@ data "azapi_resource_action" "db_keys" {
 
 This calls Azure's documented **List Keys** API action — no `null_resource`, no local scripts, just clean data source logic.
 
----
-
-## Implementation: **Native (Tomorrow)**
-
-When Terraform's AzureRM provider adds Managed Redis support, this module will:
-- Detect provider availability, or  
-- Allow manual switch via `use_azapi = false`
-
-Your consumer code won't change — only the module internals will.
-
-That means: *No breaking change, no refactor.*
-
----
 
 ## Available Examples
 
@@ -162,85 +133,11 @@ The repository includes four complete examples to get you started:
 ```
 azure-managed-redis-terraform/
   examples/
-    simple/                    # Basic Redis cluster for development
+    simple/                   # Basic Redis cluster for development
     with-modules/             # Showcase Redis modules (JSON, Search, etc.)  
     high-availability/        # HA configuration for critical workloads
-    multi-region/            # Global deployment pattern
-  modules/
-    managed-redis/           # Reusable Terraform module
-  .devcontainer/             # GitHub Codespaces configuration
-  scripts/                   # Validation and testing utilities
+    multi-region/             # Global deployment pattern
 ```
-
-### Quick Examples
-
-**Simple deployment:**
-```bash
-cd examples/simple
-terraform init && terraform apply
-```
-
-**With Redis modules:**
-```bash  
-cd examples/with-modules
-terraform init && terraform apply
-```
-
-**High availability setup:**
-```bash
-cd examples/high-availability  
-terraform init && terraform apply
-```
-
-### Automated Quality Assurance
-
-The repository includes CI/CD workflows that automatically:
-
-- **Validate Terraform code**: Run `terraform fmt`, `tflint`, and `tfsec` on every change
-- **Test multiple provider versions**: Matrix testing across AzAPI provider versions  
-- **Monitor API changes**: Nightly validation against Azure APIs to catch breaking changes
-- **Update dependencies**: Renovate automatically updates provider versions and Azure API versions
-
-This ensures the examples stay current as Azure Managed Redis evolves.
-
----
-
-## Testing Your Deployment
-
-The repository includes validation scripts to test your Redis deployment:
-
-```bash
-# Test connection and basic operations
-./scripts/test-connection.sh
-
-# Validate deployment configuration  
-./scripts/validate-deployment.sh
-```
-
-Or test manually:
-```bash
-# Basic connectivity
-redis-cli -h <hostname> -p 10000 -a <primary_key> ping
-
-# Test RedisJSON module (if enabled)
-redis-cli -h <hostname> -p 10000 -a <primary_key> JSON.SET mykey $ '{"hello":"world"}'
-```
-
-Use [**RedisInsight**](https://redis.io/insight/) for visual inspection and management.
-
----
-
-## Migration & Future Path
-
-**From existing Redis services:**
-If you're currently using Azure Cache for Redis or Redis Enterprise (Classic), the repository includes migration guidance in `docs/MIGRATION.md` covering:
-- Connection string changes
-- Module compatibility 
-- Deployment strategies
-- Rollback procedures
-
-**Future azurerm support:**
-When the azurerm provider adds native Azure Managed Redis support, the module is designed to make migration straightforward - the interface will remain stable while the implementation switches to native resources.
 
 ---
 
@@ -267,12 +164,6 @@ terraform init && terraform apply
 ## Conclusion
 
 Azure Managed Redis brings Redis Enterprise capabilities into Azure's managed service portfolio. While native Terraform support is still in development, the AzAPI provider gives you immediate access to deploy and manage these resources through infrastructure as code.
-
-This module provides:
-- **Immediate deployment** capability using AzAPI
-- **Working examples** for common scenarios  
-- **Testing and validation** scripts
-- **Future-ready design** for easy migration to azurerm
 
 The key benefit: you can start automating Azure Managed Redis deployments today without waiting for native provider support.
 
