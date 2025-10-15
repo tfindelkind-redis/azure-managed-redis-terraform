@@ -1,0 +1,4 @@
+{
+  "machine": "standardLinux32gb",
+  "devcontainer_path": ".devcontainer/devcontainer.json"
+}

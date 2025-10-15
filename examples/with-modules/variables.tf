@@ -1,0 +1,29 @@
+variable "resource_group_name" {
+  description = "Name of the resource group to create the Redis Enterprise cluster in"
+  type        = string
+  default     = "rg-redis-with-modules"
+}
+
+variable "location" {
+  description = "Azure region for the Redis Enterprise cluster"
+  type        = string
+  default     = "East US"
+}
+
+variable "redis_name" {
+  description = "Name of the Redis Enterprise cluster"
+  type        = string
+  default     = "redis-with-modules"
+}
+
+variable "environment" {
+  description = "Environment name for tagging"
+  type        = string
+  default     = "development"
+}
+
+variable "enable_all_modules" {
+  description = "Enable all available Redis modules"
+  type        = bool
+  default     = true
+}

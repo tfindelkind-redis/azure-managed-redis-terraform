@@ -1,0 +1,11 @@
+# Example terraform.tfvars file
+# Copy this file and customize for your environment
+
+# Required variables
+resource_group_name = "rg-redis-simple-demo"
+location           = "East US"
+redis_name         = "redis-simple-demo"
+
+# Optional variables
+environment = "development"
+owner      = "your-team-name"

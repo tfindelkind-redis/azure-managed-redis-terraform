@@ -1,0 +1,54 @@
+{
+  "name": "Azure Managed Redis Terraform Development",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-22.04",
+  
+  "features": {
+    "ghcr.io/devcontainers/features/terraform:1": {
+      "version": "1.6.0"
+    },
+    "ghcr.io/devcontainers/features/azure-cli:1": {
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest"
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "HashiCorp.terraform",
+        "ms-vscode.vscode-json",
+        "ms-azuretools.vscode-azureterraform", 
+        "ms-azuretools.vscode-azureresourcegroups",
+        "redhat.vscode-yaml",
+        "GitHub.copilot",
+        "GitHub.copilot-chat"
+      ],
+      "settings": {
+        "terraform.experimentalFeatures.validateOnSave": true,
+        "terraform.experimentalFeatures.prefillRequiredFields": true,
+        "files.associations": {
+          "*.tf": "terraform",
+          "*.tfvars": "terraform"
+        }
+      }
+    }
+  },
+
+  "postCreateCommand": ".devcontainer/setup.sh",
+  
+  "forwardPorts": [10000],
+  "portsAttributes": {
+    "10000": {
+      "label": "Redis Enterprise",
+      "onAutoForward": "notify"
+    }
+  },
+
+  "remoteUser": "vscode",
+  
+  "mounts": [
+    "source=terraform-cache,target=/home/vscode/.terraform.d,type=volume"
+  ]
+}

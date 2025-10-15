@@ -1,0 +1,33 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "timezone": "UTC",
+  "schedule": ["before 6am"],
+  "labels": ["dependencies"],
+  "packageRules": [
+    {
+      "matchManagers": ["terraform"],
+      "matchPackageNames": ["Azure/azapi"],
+      "groupName": "azapi provider",
+      "schedule": ["before 6am on wednesday"]
+    },
+    {
+      "matchManagers": ["terraform"],
+      "matchPackageNames": ["hashicorp/azurerm"],
+      "groupName": "azurerm provider", 
+      "schedule": ["before 6am on wednesday"]
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "groupName": "github actions",
+      "schedule": ["before 6am on sunday"]
+    }
+  ],
+  "terraform": {
+    "ignorePaths": ["examples/**/terraform.tfvars"]
+  },
+  "prConcurrentLimit": 3,
+  "prHourlyLimit": 2,
+  "assigneesFromCodeOwners": true,
+  "reviewersFromCodeOwners": true
+}

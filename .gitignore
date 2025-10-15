@@ -1,0 +1,80 @@
+# Terraform files
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+!terraform.tfvars.example
+.terraform/
+.terraform.lock.hcl
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# Backup files
+*.backup
+*.bak
+
+# Test results
+test-results/
+coverage/
+
+# Build artifacts
+dist/
+build/
+
+# Local environment files
+.env
+.env.local
+.env.*.local
+
+# Node modules (if using any JS tooling)
+node_modules/
+
+# Python cache (if using any Python tooling)
+__pycache__/
+*.pyc
+*.pyo
+
+# Documentation build artifacts
+site/
+
+# Terraform documentation
+**/README.md.tmp
+
+# Azure CLI cache
+.azure/
+
+# tfsec results
+tfsec-results.*
+
+# Local test directories
+test-outputs/
+**/test-output/
+
+# Editor directories and files
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# Local History for Visual Studio Code
+.history/
+
+# Built Visual Studio Code Extensions
+*.vsix

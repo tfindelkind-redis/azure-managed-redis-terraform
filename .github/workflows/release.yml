@@ -1,0 +1,245 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+env:
+  TF_VERSION: "1.6.0"
+
+jobs:
+  validate-release:
+    name: Validate Release
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ${{ env.TF_VERSION }}
+
+    - name: Validate All Configurations
+      run: |
+        for dir in modules/managed-redis examples/*/; do
+          echo "Validating $dir"
+          cd "$dir"
+          terraform init -backend=false
+          terraform validate
+          terraform fmt -check
+          cd - > /dev/null
+        done
+
+    - name: Security Scan
+      run: |
+        wget -O tfsec https://github.com/aquasecurity/tfsec/releases/latest/download/tfsec-linux-amd64
+        chmod +x tfsec
+        ./tfsec . --no-color --format json --out tfsec-results.json
+        
+        # Check if any HIGH or CRITICAL issues exist
+        HIGH_CRITICAL=$(cat tfsec-results.json | jq '[.results[] | select(.severity == "HIGH" or .severity == "CRITICAL")] | length')
+        if [ "$HIGH_CRITICAL" -gt 0 ]; then
+          echo "::error::Found $HIGH_CRITICAL high/critical security issues"
+          cat tfsec-results.json | jq '.results[] | select(.severity == "HIGH" or .severity == "CRITICAL")'
+          exit 1
+        fi
+
+  generate-changelog:
+    name: Generate Changelog
+    runs-on: ubuntu-latest
+    needs: validate-release
+    outputs:
+      changelog: ${{ steps.changelog.outputs.changelog }}
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Generate Changelog
+      id: changelog
+      run: |
+        # Get the previous tag
+        PREVIOUS_TAG=$(git tag --sort=-version:refname | head -n 2 | tail -n 1)
+        CURRENT_TAG=${GITHUB_REF#refs/tags/}
+        
+        echo "Generating changelog from $PREVIOUS_TAG to $CURRENT_TAG"
+        
+        # Generate changelog
+        CHANGELOG="## Changes in $CURRENT_TAG\n\n"
+        
+        # Get commits since last tag
+        COMMITS=$(git log --pretty=format:"- %s (%h)" $PREVIOUS_TAG..$CURRENT_TAG --no-merges)
+        
+        if [ -n "$COMMITS" ]; then
+          CHANGELOG="$CHANGELOG### Commits\n$COMMITS\n\n"
+        fi
+        
+        # Categorize changes
+        FEATURES=$(echo "$COMMITS" | grep -i "feat\|feature\|add" || true)
+        FIXES=$(echo "$COMMITS" | grep -i "fix\|bug\|patch" || true)
+        DOCS=$(echo "$COMMITS" | grep -i "doc\|readme" || true)
+        
+        if [ -n "$FEATURES" ]; then
+          CHANGELOG="$CHANGELOG### 🚀 Features\n$FEATURES\n\n"
+        fi
+        
+        if [ -n "$FIXES" ]; then
+          CHANGELOG="$CHANGELOG### 🐛 Bug Fixes\n$FIXES\n\n"
+        fi
+        
+        if [ -n "$DOCS" ]; then
+          CHANGELOG="$CHANGELOG### 📚 Documentation\n$DOCS\n\n"
+        fi
+        
+        # Save changelog
+        echo -e "$CHANGELOG" > CHANGELOG_RELEASE.md
+        echo "changelog<<EOF" >> $GITHUB_OUTPUT
+        cat CHANGELOG_RELEASE.md >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [validate-release, generate-changelog]
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Create Release Archive
+      run: |
+        # Create release archive with module and examples
+        tar -czf azure-managed-redis-terraform-${GITHUB_REF#refs/tags/}.tar.gz \
+          modules/ \
+          examples/ \
+          docs/ \
+          README.md \
+          CHANGELOG.md \
+          LICENSE
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref_name }}
+        name: Azure Managed Redis Terraform Module ${{ github.ref_name }}
+        body: |
+          ${{ needs.generate-changelog.outputs.changelog }}
+          
+          ## Installation
+          
+          ### Using Git Source
+          ```hcl
+          module "redis_enterprise" {
+            source = "git::https://github.com/tfindelkind-redis/azure-managed-redis-terraform.git//modules/managed-redis?ref=${{ github.ref_name }}"
+            
+            name                = "my-redis-cluster"
+            resource_group_name = "my-resource-group"
+            location            = "East US"
+          }
+          ```
+          
+          ### Download Archive
+          Download the release archive and extract to your Terraform configuration directory.
+          
+          ## What's Included
+          
+          - ✅ Configurable Terraform module
+          - ✅ Multiple deployment examples
+          - ✅ Comprehensive documentation
+          - ✅ CI/CD pipeline templates
+          - ✅ Security scanning validation
+          
+          ## Compatibility
+          
+          - **Terraform**: >= 1.3
+          - **AzAPI Provider**: ~> 1.15
+          - **AzureRM Provider**: ~> 3.80
+          
+          ## Support
+          
+          For issues and questions:
+          - 📋 [Create an Issue](https://github.com/tfindelkind-redis/azure-managed-redis-terraform/issues)
+          - 📖 [Read the Documentation](https://github.com/tfindelkind-redis/azure-managed-redis-terraform/blob/main/README.md)
+          - 💬 [Join Discussions](https://github.com/tfindelkind-redis/azure-managed-redis-terraform/discussions)
+        files: |
+          azure-managed-redis-terraform-${{ github.ref_name }}.tar.gz
+        draft: false
+        prerelease: false
+
+  update-documentation:
+    name: Update Documentation
+    runs-on: ubuntu-latest
+    needs: create-release
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Setup terraform-docs
+      uses: terraform-docs/gh-actions@v1.0.0
+      with:
+        working-dir: modules/managed-redis
+        output-file: README.md
+        output-method: inject
+        git-push: false
+
+    - name: Update Changelog
+      run: |
+        # Update main CHANGELOG.md with release information
+        CURRENT_TAG=${GITHUB_REF#refs/tags/}
+        DATE=$(date +%Y-%m-%d)
+        
+        # Create new entry at top of changelog
+        {
+          echo "# Changelog"
+          echo ""
+          echo "## [$CURRENT_TAG] - $DATE"
+          echo ""
+          cat CHANGELOG_RELEASE.md | tail -n +3
+          echo ""
+          tail -n +3 CHANGELOG.md
+        } > CHANGELOG_NEW.md
+        
+        mv CHANGELOG_NEW.md CHANGELOG.md
+
+    - name: Commit Documentation Updates
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        git add CHANGELOG.md modules/managed-redis/README.md
+        
+        if git diff --staged --quiet; then
+          echo "No documentation changes to commit"
+        else
+          git commit -m "docs: update documentation for release ${{ github.ref_name }}"
+          git push origin main
+        fi
+
+  notify-release:
+    name: Notify Release
+    runs-on: ubuntu-latest
+    needs: [create-release, update-documentation]
+    if: always() && needs.create-release.result == 'success'
+    
+    steps:
+    - name: Notify Teams (if configured)
+      run: |
+        echo "Release ${{ github.ref_name }} created successfully!"
+        echo "You can add Teams/Slack notification here if needed"
+        
+        # Example for Teams webhook (uncomment and configure if needed)
+        # curl -H "Content-Type: application/json" -d '{
+        #   "text": "🚀 New release: Azure Managed Redis Terraform Module ${{ github.ref_name }} is now available!",
+        #   "title": "Release Notification"
+        # }' "${{ secrets.TEAMS_WEBHOOK_URL }}"

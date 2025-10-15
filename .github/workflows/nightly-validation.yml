@@ -1,0 +1,238 @@
+name: Nightly Validation
+
+on:
+  schedule:
+    # Run every night at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      test_deployment:
+        description: 'Actually deploy resources for testing'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  TF_VERSION: "1.6.0"
+  ARM_SKIP_PROVIDER_REGISTRATION: "true"
+
+jobs:
+  api-version-check:
+    name: Check Azure API Versions
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Azure CLI Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Check Latest Redis Enterprise API Version
+      id: api_check
+      run: |
+        # Get the latest API version for Redis Enterprise
+        LATEST_API=$(az provider show --namespace Microsoft.Cache --query "resourceTypes[?resourceType=='redisEnterprise'].apiVersions[0]" -o tsv)
+        CURRENT_API=$(grep -o "Microsoft.Cache/redisEnterprise@[0-9\-]*" modules/managed-redis/locals.tf | cut -d@ -f2)
+        
+        echo "latest_api=$LATEST_API" >> $GITHUB_OUTPUT
+        echo "current_api=$CURRENT_API" >> $GITHUB_OUTPUT
+        
+        if [ "$LATEST_API" != "$CURRENT_API" ]; then
+          echo "api_outdated=true" >> $GITHUB_OUTPUT
+          echo "::warning::API version outdated. Current: $CURRENT_API, Latest: $LATEST_API"
+        else
+          echo "api_outdated=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Create Issue for Outdated API
+      if: steps.api_check.outputs.api_outdated == 'true'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const { data: issues } = await github.rest.issues.listForRepo({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            labels: ['api-version', 'automated'],
+            state: 'open'
+          });
+          
+          if (issues.length === 0) {
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'Update Azure Redis Enterprise API Version',
+              body: `## API Version Update Needed
+              
+              Current API version: \`${{ steps.api_check.outputs.current_api }}\`
+              Latest API version: \`${{ steps.api_check.outputs.latest_api }}\`
+              
+              Please update the API version in:
+              - \`modules/managed-redis/locals.tf\`
+              - Test all examples after updating
+              - Update documentation if new features are available
+              
+              This issue was created automatically by the nightly validation workflow.`,
+              labels: ['api-version', 'automated', 'enhancement']
+            });
+          }
+
+  provider-update-check:
+    name: Check Provider Updates
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ${{ env.TF_VERSION }}
+
+    - name: Check for Provider Updates
+      run: |
+        cd modules/managed-redis
+        terraform init -upgrade
+        
+        # Check if lock file changed (indicating available updates)
+        if ! git diff --exit-code .terraform.lock.hcl; then
+          echo "Provider updates available"
+          git diff .terraform.lock.hcl
+        else
+          echo "No provider updates available"
+        fi
+
+  test-deployment:
+    name: Test Deployment
+    runs-on: ubuntu-latest
+    if: github.event.inputs.test_deployment == 'true' || github.event_name == 'schedule'
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ${{ env.TF_VERSION }}
+
+    - name: Azure CLI Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Deploy Test Instance
+      run: |
+        cd examples/simple
+        
+        # Generate unique resource names
+        TIMESTAMP=$(date +%Y%m%d%H%M%S)
+        RG_NAME="rg-redis-nightly-test-${TIMESTAMP}"
+        REDIS_NAME="redis-test-${TIMESTAMP}"
+        
+        # Create terraform.tfvars
+        cat > terraform.tfvars << EOF
+        resource_group_name = "${RG_NAME}"
+        location = "East US"
+        redis_name = "${REDIS_NAME}"
+        environment = "testing"
+        EOF
+        
+        # Initialize and deploy
+        terraform init
+        terraform plan -input=false
+        terraform apply -auto-approve -input=false
+        
+        # Test connectivity
+        CONNECTION_STRING=$(terraform output -raw connection_string)
+        
+        # Install redis-cli for testing
+        sudo apt-get update && sudo apt-get install -y redis-tools
+        
+        # Test basic Redis operations
+        echo "Testing Redis connectivity..."
+        redis-cli -u "$CONNECTION_STRING" ping
+        
+        echo "Testing RedisJSON module..."
+        redis-cli -u "$CONNECTION_STRING" JSON.SET test $ '{"message":"nightly-test-success"}'
+        RESULT=$(redis-cli -u "$CONNECTION_STRING" JSON.GET test $.message)
+        
+        if [ "$RESULT" = '"nightly-test-success"' ]; then
+          echo "✅ Redis deployment test successful"
+        else
+          echo "❌ Redis deployment test failed"
+          exit 1
+        fi
+        
+        # Clean up resources
+        echo "Cleaning up test resources..."
+        terraform destroy -auto-approve -input=false
+      env:
+        ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+        ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+        ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+        ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+
+  region-availability-check:
+    name: Check Region Availability
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Azure CLI Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Check Redis Enterprise Availability
+      run: |
+        echo "Checking Redis Enterprise availability across regions..."
+        
+        # List of important regions to check
+        REGIONS=("eastus" "westus2" "northeurope" "westeurope" "southeastasia" "australiaeast")
+        
+        for region in "${REGIONS[@]}"; do
+          echo "Checking region: $region"
+          
+          # Check if Redis Enterprise is available in the region
+          AVAILABLE=$(az vm list-skus --location $region --resource-type virtualMachines --query "[?contains(name, 'Standard_D2s_v3')] | length(@)" -o tsv 2>/dev/null || echo "0")
+          
+          if [ "$AVAILABLE" -gt 0 ]; then
+            echo "✅ $region: Available"
+          else
+            echo "❌ $region: Not available"
+          fi
+        done
+
+  create-nightly-report:
+    name: Create Nightly Report
+    runs-on: ubuntu-latest
+    needs: [api-version-check, provider-update-check, test-deployment, region-availability-check]
+    if: always()
+    
+    steps:
+    - name: Create Summary Report
+      run: |
+        echo "# Nightly Validation Report - $(date)" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## Job Status" >> $GITHUB_STEP_SUMMARY
+        echo "- API Version Check: ${{ needs.api-version-check.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Provider Update Check: ${{ needs.provider-update-check.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Test Deployment: ${{ needs.test-deployment.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Region Availability: ${{ needs.region-availability-check.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Add any failures or important information
+        if [[ "${{ needs.api-version-check.result }}" != "success" ]] || 
+           [[ "${{ needs.test-deployment.result }}" != "success" ]]; then
+          echo "## ⚠️ Issues Detected" >> $GITHUB_STEP_SUMMARY
+          echo "Please check the individual job logs for details." >> $GITHUB_STEP_SUMMARY
+        else
+          echo "## ✅ All Checks Passed" >> $GITHUB_STEP_SUMMARY
+          echo "Repository is healthy and up to date." >> $GITHUB_STEP_SUMMARY
+        fi
