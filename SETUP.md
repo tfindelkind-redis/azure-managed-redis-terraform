@@ -80,12 +80,86 @@ az account show --output table
 
 ### Step 2: Create Azure Service Principal
 
-**Why do you need a Service Principal?**
+**Why do you need authentication for GitHub workflows?**
 - Enables automated authentication for CI/CD workflows
 - Provides secure, non-interactive authentication for GitHub Actions
 - Allows Terraform to authenticate with Azure without manual intervention
 
-#### Option A: Quick Setup (Recommended)
+#### Option A: Azure Workload Identity with OIDC (Recommended) 🎯
+
+**Modern, secure approach with no stored secrets!**
+
+This method uses OpenID Connect (OIDC) to establish trust between GitHub and Azure, eliminating the need to store long-lived secrets.
+
+```bash
+# Set variables
+SUBSCRIPTION_ID=$(az account show --query id -o tsv)
+RESOURCE_GROUP="rg-redis-terraform"  # Your target resource group
+REPO_OWNER="your-github-username"    # Your GitHub username/org
+REPO_NAME="azure-managed-redis-terraform"  # Your repo name
+
+# Create Azure AD Application
+APP_NAME="github-redis-terraform"
+az ad app create --display-name "$APP_NAME" --query appId -o tsv
+
+# Get the Application ID
+APP_ID=$(az ad app list --display-name "$APP_NAME" --query "[0].appId" -o tsv)
+
+# Create Service Principal
+az ad sp create --id $APP_ID
+
+# Get Service Principal Object ID
+SP_OBJECT_ID=$(az ad sp show --id $APP_ID --query id -o tsv)
+
+# Create resource group (if it doesn't exist)
+az group create --name $RESOURCE_GROUP --location "East US"
+
+# Assign Contributor role to the resource group only
+az role assignment create \
+  --assignee $APP_ID \
+  --role "Contributor" \
+  --scope "/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP"
+
+# Create federated credential for GitHub Actions
+az ad app federated-credential create \
+  --id $APP_ID \
+  --parameters '{
+    "name": "github-actions-main",
+    "issuer": "https://token.actions.githubusercontent.com",
+    "subject": "repo:'$REPO_OWNER'/'$REPO_NAME':ref:refs/heads/main",
+    "description": "GitHub Actions - Main Branch",
+    "audiences": ["api://AzureADTokenExchange"]
+  }'
+
+# Create federated credential for Pull Requests
+az ad app federated-credential create \
+  --id $APP_ID \
+  --parameters '{
+    "name": "github-actions-pr",
+    "issuer": "https://token.actions.githubusercontent.com", 
+    "subject": "repo:'$REPO_OWNER'/'$REPO_NAME':pull_request",
+    "description": "GitHub Actions - Pull Requests",
+    "audiences": ["api://AzureADTokenExchange"]
+  }'
+
+# Display the values you need for GitHub secrets
+echo "=== GitHub Secrets Required ==="
+echo "AZURE_CLIENT_ID: $APP_ID"
+echo "AZURE_TENANT_ID: $(az account show --query tenantId -o tsv)"
+echo "AZURE_SUBSCRIPTION_ID: $SUBSCRIPTION_ID"
+echo "AZURE_RESOURCE_GROUP: $RESOURCE_GROUP"
+```
+
+**What you get with OIDC:**
+- 🔐 **No secrets stored** in GitHub - uses temporary tokens
+- 🎯 **Repository-specific** - only your repo can use this identity
+- 📝 **Branch-specific** - separate credentials for main branch vs PRs
+- 🏢 **Resource group scoped** - permissions limited to your RG only
+- ⏰ **Short-lived tokens** - automatically expire and refresh
+
+#### Option B: Traditional Service Principal (Legacy) ⚠️
+
+**Note**: This method requires storing secrets in GitHub and is less secure than OIDC.
 
 ```bash
 # Create Service Principal with Contributor role for your subscription
@@ -153,21 +227,37 @@ az ad sp create-for-rbac \
   --json-auth
 ```
 
-### Step 3: Verify Service Principal
+### Step 3: Configure GitHub Secrets
 
+Navigate to your GitHub repository → **Settings** → **Secrets and variables** → **Actions**
+
+#### For Azure Workload Identity (OIDC) - Recommended:
+
+**🚀 Automated Setup (Easiest)**:
 ```bash
-# Test the Service Principal authentication
-az login --service-principal \
-  --username "$CLIENT_ID" \
-  --password "$CLIENT_SECRET" \
-  --tenant "$TENANT_ID"
-
-# Verify it works
-az account show
-
-# Switch back to your user account
-az login
+./scripts/setup-oidc.sh
 ```
+
+**📖 Manual Setup**:
+Add these **Repository secrets**:
+| Secret Name | Value | Example |
+|-------------|-------|---------|
+| `AZURE_CLIENT_ID` | Application (client) ID | `12345678-1234-1234-1234-123456789012` |
+| `AZURE_TENANT_ID` | Directory (tenant) ID | `11111111-1111-1111-1111-111111111111` |
+| `AZURE_SUBSCRIPTION_ID` | Subscription ID | `87654321-4321-4321-4321-210987654321` |
+| `AZURE_RESOURCE_GROUP` | Target resource group | `rg-redis-terraform` |
+
+**No client secret needed!** 🎉 The OIDC trust relationship handles authentication.
+
+#### For Traditional Service Principal (Legacy):
+
+Add these **Repository secrets**:
+| Secret Name | Value | Example |
+|-------------|-------|---------|
+| `AZURE_CLIENT_ID` | Application (client) ID | `12345678-1234-1234-1234-123456789012` |
+| `AZURE_CLIENT_SECRET` | Client secret value | `your-secret-here` |
+| `AZURE_SUBSCRIPTION_ID` | Subscription ID | `87654321-4321-4321-4321-210987654321` |
+| `AZURE_TENANT_ID` | Directory (tenant) ID | `11111111-1111-1111-1111-111111111111` |
 
 ---
 

@@ -1,7 +1,14 @@
 # Azure Managed Redis Terraform Module - Unofficial
 
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/tfindelkind-redis/azure-managed-redis-terraform)
-[![CI](https://github.com/tfindelkind-redis/azure-managed-redis-terraform/actions/workflows/ci.yml/badge.svg)](https://github.com/tfindelkind-redis/azure-managed-redis-terraform/actions/workflows/ci.yml)
+[![CI](https://github.com/tfindelkind-redis/azure-managed-redis-terraform/actions/workflows/ci.yml/badge.svg)](https://github.com/tfindelkind-redis/az## 📚 Examples
+
+| 📁 Example                                          | 📝 Description            | 🎯 Use Case               |
+|-----------------------------------------------------|----------------------------|----------------------------|
+| [Simple](examples/simple/)                         | Basic deployment           | Development & testing      |
+| [With Modules](examples/with-modules/)             | Redis modules showcase     | Feature exploration        |
+| [High Availability](examples/high-availability/)   | HA configuration           | High-availability apps     |
+| [Multi-Region](examples/multi-region/)             | Global deployment          | Worldwide applications     |ged-redis-terraform/actions/workflows/ci.yml)
 [![Nightly Validation](https://github.com/tfindelkind-redis/azure-managed-redis-terraform/actions/workflows/nightly-validation.yml/badge.svg)](https://github.com/tfindelkind-redis/azure-managed-redis-terraform/actions/workflows/nightly-validation.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -45,6 +52,27 @@ Azure Managed Redis consists of:
    - ✅ **VS Code environment** with extensions
    - ✅ **All examples ready** to deploy
    - ✅ **No local setup** required
+
+### 🔐 Authentication Setup
+Choose your preferred authentication method:
+
+- **🎯 [Azure Workload Identity (OIDC)](./AUTHENTICATION.md#recommended-azure-workload-identity-oidc)** - Modern, secure, no secrets
+- **⚠️ [Service Principal](./AUTHENTICATION.md#traditional-service-principal-with-secrets)** - Traditional approach
+
+#### 🚀 Quick OIDC Setup (Automated)
+**One-command setup** with automatic GitHub secrets configuration:
+
+```bash
+# Clone the repository and run the setup script
+git clone https://github.com/tfindelkind-redis/azure-managed-redis-terraform.git
+cd azure-managed-redis-terraform
+./scripts/setup-oidc.sh
+```
+
+**Prerequisites**: Azure CLI and GitHub CLI authenticated
+
+#### 📖 Manual Setup
+For detailed setup instructions, see [AUTHENTICATION.md](./AUTHENTICATION.md).
 
 ### 🚀 Deploy in Codespaces (5 minutes)
 
@@ -332,17 +360,6 @@ output "production_endpoints" {
 }
 ```
 
-**Production deployment features**:
-- 🚀 **26GB memory** with Balanced_B3 SKU
-- 🔄 **Multi-AZ high availability** across 3 availability zones
-- 🔍 **All Redis Enterprise modules** for advanced data operations
-- 🔒 **Enterprise security** with TLS 1.2 encryption
-- 📊 **Production monitoring** with proper tagging
-- ⚡ **High performance** suitable for demanding applications
-
-**Expected deployment time**: ~20-25 minutes for production cluster
-```
-
 ## � Setup & Authentication Guide
 
 For comprehensive setup instructions including GitHub Codespaces configuration, Azure Service Principal creation, and GitHub Secrets management, see:
@@ -367,11 +384,11 @@ This guide covers:
 
 ## 🔧 Requirements
 
-| Name | Version |
-|------|---------|
-| [Terraform](https://www.terraform.io/) | >= 1.3 |
-| [AzAPI Provider](https://registry.terraform.io/providers/Azure/azapi/latest) | ~> 1.15 |
-| [AzureRM Provider](https://registry.terraform.io/providers/hashicorp/azurerm/latest) | ~> 3.80 |
+| 📦 Component                                                                                                 | 📋 Version    |
+|-------------------------------------------------------------------------------------------------------------|---------------|
+| [Terraform](https://www.terraform.io/)                                                                      | `>= 1.3`      |
+| [AzAPI Provider](https://registry.terraform.io/providers/Azure/azapi/latest)                               | `~> 1.15`     |
+| [AzureRM Provider](https://registry.terraform.io/providers/hashicorp/azurerm/latest)                       | `~> 3.80`     |
 
 ## 📋 Module Documentation
 
@@ -473,24 +490,6 @@ module "redis" {
   # ... same configuration - no changes needed!
 }
 ```
-
-## 📊 Available SKUs
-
-| Category | SKUs | Use Case |
-|----------|------|----------|
-| **Balanced** | B0, B1, B3, B5 | General purpose workloads |
-| **Compute Optimized** | X3, X5, X10 | CPU-intensive operations |
-| **Memory Optimized** | M10, M20 | Large datasets, caching |
-| **Flash** | F300, F700, F1500 | Cost-optimized large datasets |
-
-## 🧩 Redis Enterprise Modules
-
-| Module | Description | Use Cases |
-|--------|-------------|-----------|
-| **RedisJSON** | Native JSON support | Document storage, APIs |
-| **RediSearch** | Full-text search | Search engines, catalogs |
-| **RedisBloom** | Probabilistic data structures | Spam filtering, recommendations |
-| **RedisTimeSeries** | Time series data | IoT, monitoring, analytics |
 
 ## 🔄 Automated Updates
 

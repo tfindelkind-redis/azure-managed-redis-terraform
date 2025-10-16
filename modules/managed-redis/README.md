@@ -46,66 +46,70 @@ module "redis_enterprise" {
 
 ## Requirements
 
-| Name | Version |
-|------|---------|
-| terraform | >= 1.3 |
-| azapi | ~> 1.15 |
-| azurerm | ~> 3.80 |
+| 📦 Component                                                                              | 📋 Version    |
+|-------------------------------------------------------------------------------------------|---------------|
+| [terraform](https://www.terraform.io/)                                                   | `>= 1.3`      |
+| [azapi](https://registry.terraform.io/providers/Azure/azapi/latest)                     | `~> 1.15`     |
+| [azurerm](https://registry.terraform.io/providers/hashicorp/azurerm/latest)             | `~> 3.80`     |
 
 ## Providers
 
-| Name | Version |
-|------|---------|
-| azapi | ~> 1.15 |
-| azurerm | ~> 3.80 |
+| 🔌 Provider                                                                              | 📋 Version    |
+|-------------------------------------------------------------------------------------------|---------------|
+| [azapi](https://registry.terraform.io/providers/Azure/azapi/latest)                     | `~> 1.15`     |
+| [azurerm](https://registry.terraform.io/providers/hashicorp/azurerm/latest)             | `~> 3.80`     |
 
 ## Inputs
 
-| Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
-| name | The name of the Redis Enterprise cluster | `string` | n/a | yes |
-| resource_group_name | The name of the resource group | `string` | n/a | yes |
-| location | The Azure region | `string` | n/a | yes |
-| sku | The SKU of the Redis Enterprise cluster | `string` | `"Balanced_B0"` | no |
-| modules | List of Redis modules to enable | `list(string)` | `["RedisJSON", "RediSearch"]` | no |
-| minimum_tls_version | The minimum TLS version | `string` | `"1.2"` | no |
-| high_availability | Enable high availability | `bool` | `true` | no |
-| use_azapi | Use AzAPI provider (future: switch to native) | `bool` | `true` | no |
-| eviction_policy | Redis eviction policy | `string` | `"NoEviction"` | no |
-| client_protocol | Client protocol (Encrypted/Plaintext) | `string` | `"Encrypted"` | no |
-| clustering_policy | Clustering policy | `string` | `"EnterpriseCluster"` | no |
-| database_name | Name of the Redis database | `string` | `"default"` | no |
-| zones | Availability zones | `list(string)` | `[]` | no |
-| tags | Resource tags | `map(string)` | `{}` | no |
+| 📝 Variable Name         | 📄 Description                          | 🔧 Type            | 🎯 Default                      | ❗ Required |
+|---------------------------|------------------------------------------|--------------------|----------------------------------|:-----------:|
+| `name`                    | The name of the Redis Enterprise cluster | `string`          | n/a                              | **yes**     |
+| `resource_group_name`     | The name of the resource group          | `string`          | n/a                              | **yes**     |
+| `location`                | The Azure region                        | `string`          | n/a                              | **yes**     |
+| `sku`                     | The SKU of the Redis Enterprise cluster | `string`          | `"Balanced_B0"`                  | no          |
+| `modules`                 | List of Redis modules to enable         | `list(string)`    | `["RedisJSON", "RediSearch"]`    | no          |
+| `minimum_tls_version`     | The minimum TLS version                  | `string`          | `"1.2"`                          | no          |
+| `high_availability`       | Enable high availability                 | `bool`            | `true`                           | no          |
+| `use_azapi`               | Use AzAPI provider (future: switch to native) | `bool`      | `true`                           | no          |
+| `eviction_policy`         | Redis eviction policy                    | `string`          | `"NoEviction"`                   | no          |
+| `client_protocol`         | Client protocol (Encrypted/Plaintext)   | `string`          | `"Encrypted"`                    | no          |
+| `clustering_policy`       | Clustering policy                        | `string`          | `"EnterpriseCluster"`            | no          |
+| `database_name`           | Name of the Redis database              | `string`          | `"default"`                      | no          |
+| `zones`                   | Availability zones                       | `list(string)`    | `[]`                             | no          |
+| `tags`                    | Resource tags                            | `map(string)`     | `{}`                             | no          |
 
 ## Outputs
 
-| Name | Description |
-|------|-------------|
-| cluster_id | The ID of the Redis Enterprise cluster |
-| cluster_name | The name of the Redis Enterprise cluster |
-| database_id | The ID of the Redis database |
-| database_name | The name of the Redis database |
-| hostname | The hostname of the Redis database |
-| port | The port of the Redis database |
-| primary_key | The primary access key (sensitive) |
-| secondary_key | The secondary access key (sensitive) |
-| connection_string | Redis connection string (sensitive) |
-| connection_string_secondary | Redis connection string with secondary key (sensitive) |
+| 📤 Output Name                      | 📄 Description                                        |
+|-------------------------------------|--------------------------------------------------------|
+| `cluster_id`                        | The ID of the Redis Enterprise cluster               |
+| `cluster_name`                      | The name of the Redis Enterprise cluster             |
+| `database_id`                       | The ID of the Redis database                         |
+| `database_name`                     | The name of the Redis database                       |
+| `hostname`                          | The hostname of the Redis database                   |
+| `port`                              | The port of the Redis database                       |
+| `primary_key`                       | The primary access key 🔒 *(sensitive)*               |
+| `secondary_key`                     | The secondary access key 🔒 *(sensitive)*             |
+| `connection_string`                 | Redis connection string 🔒 *(sensitive)*              |
+| `connection_string_secondary`       | Redis connection string with secondary key 🔒 *(sensitive)* |
 
 ## Available SKUs
 
-- **Balanced**: B0, B1, B3, B5
-- **Compute Optimized**: X3, X5, X10  
-- **Memory Optimized**: M10, M20
-- **Flash**: F300, F700, F1500
+| 🚀 SKU Family         | 📊 Available Sizes          | 🎯 Use Case                    |
+|-----------------------|------------------------------|--------------------------------|
+| **Balanced**          | `B0`, `B1`, `B3`, `B5`      | General purpose workloads      |
+| **Compute Optimized** | `X3`, `X5`, `X10`           | CPU-intensive applications     |
+| **Memory Optimized**  | `M10`, `M20`                | Memory-intensive workloads     |
+| **Flash**             | `F300`, `F700`, `F1500`     | High-performance scenarios     |
 
 ## Supported Redis Modules
 
-- **RedisJSON**: JSON data structure support
-- **RediSearch**: Full-text search and indexing
-- **RedisBloom**: Probabilistic data structures
-- **RedisTimeSeries**: Time series data support
+| 🧩 Module Name         | 📄 Description                          | 🎯 Use Case                    |
+|------------------------|------------------------------------------|--------------------------------|
+| **RedisJSON**          | JSON data structure support             | Document storage, APIs        |
+| **RediSearch**         | Full-text search and indexing          | Search functionality          |
+| **RedisBloom**         | Probabilistic data structures           | Caching, analytics            |
+| **RedisTimeSeries**    | Time series data support               | Metrics, monitoring           |
 
 ## Migration Path
 

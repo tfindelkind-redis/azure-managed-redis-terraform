@@ -11,6 +11,7 @@ permissions:
   actions: read
   contents: read
   security-events: write
+  id-token: write  # Required for OIDC authentication
 
 env:
   TF_VERSION: "1.7.5"
