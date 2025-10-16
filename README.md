@@ -343,7 +343,20 @@ output "production_endpoints" {
 **Expected deployment time**: ~20-25 minutes for production cluster
 ```
 
-## 📚 Examples
+## � Setup & Authentication Guide
+
+For comprehensive setup instructions including GitHub Codespaces configuration, Azure Service Principal creation, and GitHub Secrets management, see:
+
+**👉 [Complete Setup Guide](SETUP.md)**
+
+This guide covers:
+- 🚀 GitHub Codespaces quick start
+- 🔐 Azure Service Principal creation with Azure CLI
+- 🔑 GitHub Secrets configuration with GitHub CLI
+- ⚙️ CI/CD workflow authentication setup
+- 🛠️ Troubleshooting common authentication issues
+
+## �📚 Examples
 
 | Example | Description | Use Case |
 |---------|-------------|----------|

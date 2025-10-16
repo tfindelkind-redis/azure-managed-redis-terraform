@@ -23,6 +23,18 @@ echo "🔒 Installing tfsec..."
 curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh | bash
 sudo mv tfsec /usr/local/bin/
 
+# Install GitHub CLI (if not already installed via devcontainer feature)
+echo "🐙 Installing GitHub CLI..."
+if ! command -v gh &> /dev/null; then
+    curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+    sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+    sudo apt update
+    sudo apt install -y gh
+else
+    echo "GitHub CLI already installed"
+fi
+
 # Install terraform-docs
 echo "📚 Installing terraform-docs..."
 TERRAFORM_DOCS_VERSION="0.16.0"
