@@ -42,7 +42,7 @@ output "module_test_commands" {
     ]
     redis_bloom = [
       "BF.RESERVE bf_users 0.01 1000",
-      "BF.ADD bf_users user@example.com", 
+      "BF.ADD bf_users user@example.com",
       "BF.EXISTS bf_users user@example.com"
     ]
     redis_timeseries = [

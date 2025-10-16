@@ -14,7 +14,7 @@ output "primary_cluster_id" {
 }
 
 output "secondary_cluster_id" {
-  description = "Secondary Redis Enterprise cluster ID"  
+  description = "Secondary Redis Enterprise cluster ID"
   value       = module.redis_secondary.cluster_id
 }
 
@@ -69,10 +69,10 @@ output "application_config" {
   value = {
     primary_endpoint   = "${module.redis_primary.hostname}:${module.redis_primary.port}"
     secondary_endpoint = "${module.redis_secondary.hostname}:${module.redis_secondary.port}"
-    use_tls           = true
+    use_tls            = true
     connection_timeout = "5s"
-    read_timeout      = "3s"
-    write_timeout     = "3s"
+    read_timeout       = "3s"
+    write_timeout      = "3s"
   }
 }
 
@@ -81,13 +81,13 @@ output "monitoring_endpoints" {
   value = {
     primary = {
       health_check_url = "tcp://${module.redis_primary.hostname}:${module.redis_primary.port}"
-      region          = var.primary_location
-      cluster_id      = module.redis_primary.cluster_id
+      region           = var.primary_location
+      cluster_id       = module.redis_primary.cluster_id
     }
     secondary = {
       health_check_url = "tcp://${module.redis_secondary.hostname}:${module.redis_secondary.port}"
-      region          = var.secondary_location
-      cluster_id      = module.redis_secondary.cluster_id
+      region           = var.secondary_location
+      cluster_id       = module.redis_secondary.cluster_id
     }
   }
 }
@@ -95,12 +95,12 @@ output "monitoring_endpoints" {
 output "disaster_recovery_info" {
   description = "Information for disaster recovery planning"
   value = {
-    primary_region   = var.primary_location
-    secondary_region = var.secondary_location
-    sku             = var.redis_sku
+    primary_region    = var.primary_location
+    secondary_region  = var.secondary_location
+    sku               = var.redis_sku
     high_availability = true
-    backup_policy   = "Configure manual backup procedures"
-    rpo_target      = "Use application-level replication for data consistency"
-    rto_target      = "DNS failover + application restart time"
+    backup_policy     = "Configure manual backup procedures"
+    rpo_target        = "Use application-level replication for data consistency"
+    rto_target        = "DNS failover + application restart time"
   }
 }

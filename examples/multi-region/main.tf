@@ -2,7 +2,7 @@
 resource "azurerm_resource_group" "primary" {
   name     = "rg-${var.project_name}-${var.primary_location}"
   location = var.primary_location
-  
+
   tags = {
     Environment = var.environment
     Region      = "primary"
@@ -14,7 +14,7 @@ resource "azurerm_resource_group" "primary" {
 resource "azurerm_resource_group" "secondary" {
   name     = "rg-${var.project_name}-${var.secondary_location}"
   location = var.secondary_location
-  
+
   tags = {
     Environment = var.environment
     Region      = "secondary"
@@ -25,24 +25,24 @@ resource "azurerm_resource_group" "secondary" {
 # Primary Redis Enterprise cluster
 module "redis_primary" {
   source = "../../modules/managed-redis"
-  
+
   name                = "${var.project_name}-primary"
   resource_group_name = azurerm_resource_group.primary.name
   location            = azurerm_resource_group.primary.location
-  
+
   sku = var.redis_sku
-  
+
   modules = [
     "RedisJSON",
     "RediSearch"
   ]
-  
+
   high_availability   = true
   minimum_tls_version = "1.2"
-  zones              = ["1", "2", "3"]
-  
+  zones               = ["1", "2", "3"]
+
   use_azapi = true
-  
+
   tags = {
     Environment = var.environment
     Region      = "primary"
@@ -54,24 +54,24 @@ module "redis_primary" {
 # Secondary Redis Enterprise cluster
 module "redis_secondary" {
   source = "../../modules/managed-redis"
-  
+
   name                = "${var.project_name}-secondary"
   resource_group_name = azurerm_resource_group.secondary.name
   location            = azurerm_resource_group.secondary.location
-  
+
   sku = var.redis_sku
-  
+
   modules = [
     "RedisJSON",
     "RediSearch"
   ]
-  
+
   high_availability   = true
   minimum_tls_version = "1.2"
-  zones              = ["1", "2", "3"]
-  
+  zones               = ["1", "2", "3"]
+
   use_azapi = true
-  
+
   tags = {
     Environment = var.environment
     Region      = "secondary"

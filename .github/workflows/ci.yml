@@ -186,8 +186,8 @@ jobs:
 
     - name: Update provider versions
       run: |
-        sed -i 's/azapi.*{/azapi = {\n      source  = "Azure\/azapi"\n      version = "${{ matrix.azapi_version }}"\n    }/g' modules/managed-redis/versions.tf
-        sed -i 's/azurerm.*{/azurerm = {\n      source  = "hashicorp\/azurerm"\n      version = "${{ matrix.azurerm_version }}"\n    }/g' modules/managed-redis/versions.tf
+        sed -i 's/version = "~> 1\.[0-9]*"/version = "${{ matrix.azapi_version }}"/g' modules/managed-redis/versions.tf
+        sed -i 's/version = "~> 3\.[0-9]*"/version = "${{ matrix.azurerm_version }}"/g' modules/managed-redis/versions.tf
 
     - name: Terraform Init
       run: terraform init

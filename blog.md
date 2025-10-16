@@ -14,7 +14,17 @@ Azure Managed Redis brings the **power of Redis Enterprise** directly into Azure
 
 Managed Redis supports modules such as **RedisJSON**, **RediSearch**, and **RedisBloom**, and will expand further as the service matures.
 
-For many teams working with infrastructure as code, that means:  
+### Azure Cache for Redis Retirement
+
+Microsoft has announced the retirement of **Azure Cache for Redis**, with a clear migration timeline:
+
+- **October 1, 2026**: No new Azure Cache for Redis instances can be created
+- **Existing instances**: Will continue to be supported until further notice
+- **Recommended path**: Migrate to Azure Managed Redis for new deployments
+
+This makes Azure Managed Redis the **strategic choice** for new Redis deployments on Azure, combining Redis Enterprise capabilities with Azure's managed services approach.
+
+For many teams working with infrastructure as code, this transition means:  
 > "I need to deploy Redis Enterprise on Azure with Terraform now — but the azurerm provider doesn't support it yet."
 
 This is where AzAPI comes in as the bridge solution.
@@ -31,6 +41,20 @@ Since the azurerm provider doesn't yet support Azure Managed Redis, we can use t
 | **2. Future-proof design** | Module interface stays stable for easy migration to azurerm later |
 | **3. Direct API access** | Use Azure REST APIs through Terraform without waiting for provider updates |
 | **4. Working examples** | Ready-to-use examples you can deploy immediately |
+
+### Module Implementation
+
+To demonstrate this AzAPI approach, we've created a comprehensive Terraform module that abstracts the complexity of Azure's REST APIs into a simple, reusable interface. This GitHub repository provides:
+
+- **Reusable Module**: A well-structured Terraform module following best practices
+- **Multiple Examples**: Four different deployment scenarios (simple, with-modules, HA, multi-region)
+- **Testing Scripts**: Automated validation and connection testing utilities
+- **CI/CD Integration**: GitHub Actions workflows for continuous validation
+- **Documentation**: Complete usage guides and troubleshooting resources
+
+**Repository**: [tfindelkind-redis/azure-managed-redis-terraform](https://github.com/tfindelkind-redis/azure-managed-redis-terraform)
+
+> ⚠️ **Important Notice**: This repository and module are provided as an informational guide and reference implementation. It is not officially supported by Microsoft, Redis, or any other vendor. Use this content for learning and development purposes, and thoroughly test any implementations before deploying in your environment.
 
 ## Architecture Overview
 
@@ -56,19 +80,106 @@ variable "sku"                 { type = string   default = "Balanced_B0" }
 variable "modules"             { type = list(string) default = ["RedisJSON","RediSearch"] }
 variable "minimum_tls_version" { type = string   default = "1.2" }
 variable "high_availability"   { type = bool     default = true }
+variable "zones"               { type = list(string) default = [] }
+variable "eviction_policy"     { type = string   default = "NoEviction" }
+variable "client_protocol"     { type = string   default = "Encrypted" }
+variable "clustering_policy"   { type = string   default = "EnterpriseCluster" }
 variable "use_azapi"           { type = bool     default = true }
 ```
 
 ### Outputs
 ```hcl
-output "cluster_id"  { value = azapi_resource.cluster.id }
-output "db_id"       { value = azapi_resource.db.id }
-output "hostname"    { value = azapi_resource.db.name }
-output "primary_key" { value = data.azapi_resource_action.db_keys.output.primaryKey  sensitive = true }
-output "secondary_key" { value = data.azapi_resource_action.db_keys.output.secondaryKey  sensitive = true }
+output "cluster_id"    { value = azapi_resource.cluster.id }
+output "database_id"   { value = azapi_resource.database.id }
+output "hostname"      { value = jsondecode(azapi_resource.database.output).properties.hostName }
+output "port"          { value = jsondecode(azapi_resource.database.output).properties.port }
+output "primary_key"   { value = data.azapi_resource_action.database_keys.output.primaryKey   sensitive = true }
+output "secondary_key" { value = data.azapi_resource_action.database_keys.output.secondaryKey sensitive = true }
 ```
 
 This contract remains identical when you later switch to native Terraform resources.
+
+### Why Migration From AzAPI To azurerm Will Be Simple
+
+The module is designed for seamless migration from AzAPI to azurerm because:
+
+- **Identical Interface**: The same input variables and output values work for both implementations
+- **Internal Abstraction**: Only the resource implementation changes (from `azapi_resource` to `azurerm_redis_enterprise`)  
+- **No State Migration**: Terraform can import existing resources with minimal configuration changes
+- **Version Control**: The `use_azapi` variable allows switching implementations without breaking changes
+
+When azurerm adds native support, you simply:
+1. Update the module version
+2. Set `use_azapi = false` (or leave default)  
+3. Run `terraform plan` to see the implementation switch
+4. Apply with confidence - same inputs, same outputs, same Redis cluster
+
+---
+
+## Azure Managed Redis Configuration Options
+
+The module supports all major Azure Managed Redis configuration options:
+
+### **Performance & Scaling**
+```hcl
+# SKU options for different performance tiers
+sku = "Balanced_B0"        # Entry level
+sku = "Balanced_B1"        # Standard workloads  
+sku = "Balanced_B3"        # High throughput
+sku = "MemoryOptimized_M10" # Memory-intensive apps
+sku = "Flash_F300"         # Flash storage for large datasets
+```
+
+### **Security & Networking**  
+```hcl
+# TLS encryption (always enabled for Azure Managed Redis)
+minimum_tls_version = "1.2"    # Recommended
+client_protocol = "Encrypted"  # Encrypted (default) or Plaintext
+
+# Note: Azure Managed Redis uses public endpoints with TLS encryption
+# Private endpoints and VNet integration are not currently supported
+# Access control is managed through Redis AUTH and Azure RBAC
+```
+
+### **High Availability & Reliability**
+```hcl 
+# Multi-zone deployment
+high_availability = true
+zones = ["1", "2", "3"]    # Deploy across availability zones
+
+# Clustering for horizontal scale
+clustering_policy = "EnterpriseCluster"  # Redis Enterprise clustering (default)
+clustering_policy = "OSSCluster"         # Open source Redis clustering
+```
+
+### **Data Management**
+```hcl
+# Eviction policies when memory limit reached
+eviction_policy = "NoEviction"      # Reject writes (default)
+eviction_policy = "AllKeysLRU"      # Remove least recently used keys
+eviction_policy = "VolatileTTL"     # Remove keys with shortest TTL
+```
+
+### **Redis Enterprise Modules**
+```hcl
+# Advanced Redis capabilities
+modules = [
+  "RedisJSON",      # JSON document storage
+  "RediSearch",     # Full-text search and indexing
+  "RedisBloom",     # Probabilistic data structures  
+  "RedisTimeSeries" # Time-series data management
+]
+```
+
+### **Networking Considerations**
+
+Currently, Azure Managed Redis:
+- **Uses public endpoints** with TLS encryption and Redis AUTH
+- **Does not support** private endpoints or VNet integration (as of 2024)  
+- **Access control** through Redis passwords and Azure RBAC
+- **Network security** relies on Redis AUTH keys and Azure firewall rules
+
+For private networking, consider Azure Cache for Redis (classic) which supports VNet integration, or wait for future Azure Managed Redis networking features.
 
 ---
 
@@ -79,7 +190,7 @@ Since the `azurerm` provider doesn't yet expose Managed Redis resources, we use 
 ### Cluster
 ```hcl
 resource "azapi_resource" "cluster" {
-  type      = "Microsoft.Cache/redisEnterprise@2025-04-01"
+  type      = "Microsoft.Cache/redisEnterprise@2024-09-01-preview"
   name      = var.name
   location  = var.location
   parent_id = azurerm_resource_group.rg.id
@@ -90,14 +201,15 @@ resource "azapi_resource" "cluster" {
       minimumTlsVersion = var.minimum_tls_version
     }
   }
-  schema_validation_enabled = true
+  zones = var.zones
+  schema_validation_enabled = false
 }
 ```
 
 ### Database
 ```hcl
-resource "azapi_resource" "db" {
-  type      = "Microsoft.Cache/redisEnterprise/databases@2025-04-01"
+resource "azapi_resource" "database" {
+  type      = "Microsoft.Cache/redisEnterprise/databases@2024-09-01-preview"
   name      = "default"
   parent_id = azapi_resource.cluster.id
   body = {
@@ -114,9 +226,9 @@ resource "azapi_resource" "db" {
 
 ### Access Keys (no scripts needed)
 ```hcl
-data "azapi_resource_action" "db_keys" {
-  type        = "Microsoft.Cache/redisEnterprise/databases@2025-07-01"
-  resource_id = azapi_resource.db.id
+data "azapi_resource_action" "database_keys" {
+  type        = "Microsoft.Cache/redisEnterprise/databases@2024-09-01-preview"
+  resource_id = azapi_resource.database.id
   action      = "listKeys"
   method      = "POST"
   response_export_values = ["primaryKey", "secondaryKey"]
@@ -124,7 +236,6 @@ data "azapi_resource_action" "db_keys" {
 ```
 
 This calls Azure's documented **List Keys** API action — no `null_resource`, no local scripts, just clean data source logic.
-
 
 ## Available Examples
 
@@ -138,6 +249,34 @@ azure-managed-redis-terraform/
     high-availability/        # HA configuration for critical workloads
     multi-region/             # Global deployment pattern
 ```
+
+## Testing Your Deployment
+
+After deployment, validate your Redis cluster with the included testing scripts:
+
+```bash
+# Test basic connectivity and operations
+./scripts/test-connection.sh
+
+# Validate deployment configuration
+./scripts/validate-deployment.sh
+```
+
+Or test manually:
+```bash
+# Basic PING test
+redis-cli -h myredis.eastus.redisenterprise.cache.azure.net -p 10000 -a <password> ping
+
+# Test RedisJSON module
+redis-cli -h myredis.eastus.redisenterprise.cache.azure.net -p 10000 -a <password> \
+  JSON.SET user:123 $ '{"name":"John","age":30}'
+
+# Test RediSearch module  
+redis-cli -h myredis.eastus.redisenterprise.cache.azure.net -p 10000 -a <password> \
+  FT.CREATE idx:users ON JSON PREFIX 1 user: SCHEMA $.name TEXT
+```
+
+For visual management, use [RedisInsight](https://redis.io/insight/) with your connection details.
 
 ---
 
@@ -163,9 +302,23 @@ terraform init && terraform apply
 
 ## Conclusion
 
-Azure Managed Redis brings Redis Enterprise capabilities into Azure's managed service portfolio. While native Terraform support is still in development, the AzAPI provider gives you immediate access to deploy and manage these resources through infrastructure as code.
+Azure Managed Redis brings Redis Enterprise capabilities into Azure's managed service portfolio with:
 
-The key benefit: you can start automating Azure Managed Redis deployments today without waiting for native provider support.
+- **Redis Enterprise modules** (JSON, Search, Bloom, TimeSeries) 
+- **Managed scaling** from development to high-performance tiers
+- **Built-in high availability** across availability zones
+- **Enterprise security** with TLS encryption and Redis AUTH
+
+While native Terraform azurerm support is in development, the AzAPI approach gives you immediate access to all these capabilities through infrastructure as code.
+
+**Key advantages of this approach:**
+- Deploy today without waiting for provider updates
+- Future-proof design for seamless migration to azurerm  
+- Complete configuration coverage (SKUs, modules, HA, security)
+- Working examples for common deployment scenarios
+- Automated testing and validation
+
+The module handles the complexity of Azure's REST APIs while maintaining the simplicity of Terraform's declarative syntax.
 
 👉 [**Get started with the module and examples on GitHub**](https://github.com/tfindelkind-redis/azure-managed-redis-terraform)
 
@@ -174,4 +327,4 @@ The key benefit: you can start automating Azure Managed Redis deployments today 
 ## About the Author
 
 **Thomas Findelkind** is a Senior Specialist Solution Architect at Redis, helping teams architect, automate, and scale with Redis Enterprise in the cloud.  
-Follow Thomas on [LinkedIn](https://www.linkedin.com/in/thomasfindelkind) or [GitHub](https://github.com/tfindelkind-redis).
+Follow Thomas on [LinkedIn](https://www.linkedin.com/in/thomasfindelkind) 
