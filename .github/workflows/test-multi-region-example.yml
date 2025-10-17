@@ -1,0 +1,184 @@
+name: Test Multi-Region Example
+
+on:
+  workflow_dispatch:
+    inputs:
+      cleanup:
+        description: 'Clean up resources after testing'
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  id-token: write    # Required for OIDC authentication
+  contents: read
+
+env:
+  TF_VERSION: "1.7.5"
+  ARM_SKIP_PROVIDER_REGISTRATION: "true"
+
+jobs:
+  test-multi-region:
+    name: Test Multi-Region Example
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ${{ env.TF_VERSION }}
+
+    - name: Azure CLI Login
+      uses: azure/login@v2
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        enable-AzPSSession: false
+
+    - name: Deploy Multi-Region Example
+      id: deploy
+      run: |
+        cd examples/multi-region
+        
+        # Generate unique resource names
+        TIMESTAMP=$(date +%Y%m%d%H%M%S)
+        PROJECT_NAME="redis-multiregion-test-${TIMESTAMP}"
+        
+        # Create terraform.tfvars
+        cat > terraform.tfvars << EOF
+        project_name = "${PROJECT_NAME}"
+        primary_location = "East US"
+        secondary_location = "West US 2"
+        environment = "testing"
+        redis_sku = "Balanced_B1"
+        EOF
+        
+        echo "terraform_dir=$(pwd)" >> $GITHUB_OUTPUT
+        echo "project_name=${PROJECT_NAME}" >> $GITHUB_OUTPUT
+        
+        # Initialize and deploy
+        terraform init
+        terraform plan -input=false
+        terraform apply -auto-approve -input=false
+        
+        echo "✅ Multi-region example deployed successfully"
+
+    - name: Test Primary Region Redis
+      run: |
+        cd examples/multi-region
+        
+        # Get primary connection string
+        PRIMARY_CONNECTION=$(terraform output -raw primary_connection_string)
+        
+        # Install redis-cli for testing
+        sudo apt-get update && sudo apt-get install -y redis-tools
+        
+        # Test primary region
+        echo "Testing primary region Redis connectivity..."
+        redis-cli -u "$PRIMARY_CONNECTION" ping
+        
+        # Set test data in primary
+        redis-cli -u "$PRIMARY_CONNECTION" JSON.SET primary:test $ '{
+          "region": "primary",
+          "location": "East US",
+          "test_data": "multi-region-primary-test",
+          "timestamp": "'$(date -Iseconds)'"
+        }'
+        
+        # Verify primary data
+        PRIMARY_RESULT=$(redis-cli -u "$PRIMARY_CONNECTION" JSON.GET primary:test $.region)
+        
+        if [ "$PRIMARY_RESULT" = '"primary"' ]; then
+          echo "✅ Primary region Redis test successful"
+        else
+          echo "❌ Primary region Redis test failed"
+          exit 1
+        fi
+
+    - name: Test Secondary Region Redis
+      run: |
+        cd examples/multi-region
+        
+        # Get secondary connection string
+        SECONDARY_CONNECTION=$(terraform output -raw secondary_connection_string)
+        
+        # Test secondary region
+        echo "Testing secondary region Redis connectivity..."
+        redis-cli -u "$SECONDARY_CONNECTION" ping
+        
+        # Set test data in secondary
+        redis-cli -u "$SECONDARY_CONNECTION" JSON.SET secondary:test $ '{
+          "region": "secondary",
+          "location": "West US 2",
+          "test_data": "multi-region-secondary-test",
+          "timestamp": "'$(date -Iseconds)'"
+        }'
+        
+        # Verify secondary data
+        SECONDARY_RESULT=$(redis-cli -u "$SECONDARY_CONNECTION" JSON.GET secondary:test $.region)
+        
+        if [ "$SECONDARY_RESULT" = '"secondary"' ]; then
+          echo "✅ Secondary region Redis test successful"
+        else
+          echo "❌ Secondary region Redis test failed"
+          exit 1
+        fi
+
+    - name: Test Multi-Region Search Capabilities
+      run: |
+        cd examples/multi-region
+        
+        PRIMARY_CONNECTION=$(terraform output -raw primary_connection_string)
+        SECONDARY_CONNECTION=$(terraform output -raw secondary_connection_string)
+        
+        # Test RediSearch in primary region
+        echo "Testing RediSearch in primary region..."
+        redis-cli -u "$PRIMARY_CONNECTION" FT.CREATE idx:products ON JSON PREFIX 1 product: SCHEMA $.name AS name TEXT $.category AS category TAG
+        redis-cli -u "$PRIMARY_CONNECTION" JSON.SET product:1 $ '{"name":"Laptop","category":"Electronics","region":"primary"}'
+        PRIMARY_SEARCH=$(redis-cli -u "$PRIMARY_CONNECTION" FT.SEARCH idx:products "Laptop")
+        
+        # Test RediSearch in secondary region
+        echo "Testing RediSearch in secondary region..."
+        redis-cli -u "$SECONDARY_CONNECTION" FT.CREATE idx:users ON JSON PREFIX 1 user: SCHEMA $.name AS name TEXT $.city AS city TAG
+        redis-cli -u "$SECONDARY_CONNECTION" JSON.SET user:1 $ '{"name":"Alice","city":"Seattle","region":"secondary"}'
+        SECONDARY_SEARCH=$(redis-cli -u "$SECONDARY_CONNECTION" FT.SEARCH idx:users "Alice")
+        
+        if [[ "$PRIMARY_SEARCH" == *"Laptop"* ]] && [[ "$SECONDARY_SEARCH" == *"Alice"* ]]; then
+          echo "✅ Multi-region search capabilities test successful"
+        else
+          echo "❌ Multi-region search capabilities test failed"
+          exit 1
+        fi
+
+    - name: Display Connection Information
+      run: |
+        cd examples/multi-region
+        
+        echo "## Multi-Region Example Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Deployment Information" >> $GITHUB_STEP_SUMMARY
+        echo "- Project Name: ${{ steps.deploy.outputs.project_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Primary Region: East US" >> $GITHUB_STEP_SUMMARY
+        echo "- Secondary Region: West US 2" >> $GITHUB_STEP_SUMMARY
+        echo "- SKU: Balanced_B1" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Test Status" >> $GITHUB_STEP_SUMMARY
+        echo "✅ Primary Deployment: Successful" >> $GITHUB_STEP_SUMMARY
+        echo "✅ Secondary Deployment: Successful" >> $GITHUB_STEP_SUMMARY
+        echo "✅ Primary Connectivity: Working" >> $GITHUB_STEP_SUMMARY
+        echo "✅ Secondary Connectivity: Working" >> $GITHUB_STEP_SUMMARY
+        echo "✅ RedisJSON (Both Regions): Functional" >> $GITHUB_STEP_SUMMARY
+        echo "✅ RediSearch (Both Regions): Functional" >> $GITHUB_STEP_SUMMARY
+
+    - name: Clean Up Resources
+      if: always() && github.event.inputs.cleanup == 'true'
+      run: |
+        cd examples/multi-region
+        
+        echo "Cleaning up test resources..."
+        terraform destroy -auto-approve -input=false
+        echo "✅ Resources cleaned up"

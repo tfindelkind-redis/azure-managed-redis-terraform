@@ -141,7 +141,7 @@ jobs:
         
         # Generate unique resource names
         TIMESTAMP=$(date +%Y%m%d%H%M%S)
-        RG_NAME="rg-azure-managed-redis-terraform-test-${TIMESTAMP}"
+        RG_NAME="rg-azure-managed-redis-terraform"
         REDIS_NAME="redis-test-${TIMESTAMP}"
         
         # Create terraform.tfvars
@@ -150,6 +150,7 @@ jobs:
         location = "East US"
         redis_name = "${REDIS_NAME}"
         environment = "testing"
+        create_resource_group = false
         EOF
         
         # Initialize and deploy

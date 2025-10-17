@@ -27,3 +27,9 @@ variable "enable_all_modules" {
   type        = bool
   default     = true
 }
+
+variable "create_resource_group" {
+  description = "Whether to create a new resource group or use an existing one"
+  type        = bool
+  default     = true
+}

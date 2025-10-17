@@ -27,3 +27,9 @@ variable "owner" {
   type        = string
   default     = "platform-team"
 }
+
+variable "create_resource_group" {
+  description = "Whether to create a new resource group or use an existing one"
+  type        = bool
+  default     = true
+}

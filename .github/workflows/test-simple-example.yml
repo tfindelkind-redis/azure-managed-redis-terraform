@@ -1,0 +1,118 @@
+name: Test Simple Example
+
+on:
+  workflow_dispatch:
+    inputs:
+      cleanup:
+        description: 'Clean up resources after testing'
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  id-token: write    # Required for OIDC authentication
+  contents: read
+
+env:
+  TF_VERSION: "1.7.5"
+  ARM_SKIP_PROVIDER_REGISTRATION: "true"
+
+jobs:
+  test-simple:
+    name: Test Simple Example
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ${{ env.TF_VERSION }}
+
+    - name: Azure CLI Login
+      uses: azure/login@v2
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        enable-AzPSSession: false
+
+    - name: Deploy Simple Example
+      id: deploy
+      run: |
+        cd examples/simple
+        
+        # Generate unique resource names
+        TIMESTAMP=$(date +%Y%m%d%H%M%S)
+        REDIS_NAME="redis-simple-test-${TIMESTAMP}"
+        
+        # Create terraform.tfvars
+        cat > terraform.tfvars << EOF
+        resource_group_name = "rg-azure-managed-redis-terraform"
+        location = "East US"
+        redis_name = "${REDIS_NAME}"
+        environment = "testing"
+        create_resource_group = false
+        EOF
+        
+        echo "terraform_dir=$(pwd)" >> $GITHUB_OUTPUT
+        echo "redis_name=${REDIS_NAME}" >> $GITHUB_OUTPUT
+        
+        # Initialize and deploy
+        terraform init
+        terraform plan -input=false
+        terraform apply -auto-approve -input=false
+        
+        echo "✅ Simple example deployed successfully"
+
+    - name: Test Redis Connectivity
+      run: |
+        cd examples/simple
+        
+        # Get connection string
+        CONNECTION_STRING=$(terraform output -raw connection_string)
+        
+        # Install redis-cli for testing
+        sudo apt-get update && sudo apt-get install -y redis-tools
+        
+        # Test basic Redis operations
+        echo "Testing Redis connectivity..."
+        redis-cli -u "$CONNECTION_STRING" ping
+        
+        echo "Testing RedisJSON module..."
+        redis-cli -u "$CONNECTION_STRING" JSON.SET test $ '{"message":"simple-example-test","timestamp":"$(date)"}'
+        RESULT=$(redis-cli -u "$CONNECTION_STRING" JSON.GET test $.message)
+        
+        if [ "$RESULT" = '"simple-example-test"' ]; then
+          echo "✅ Redis connectivity test successful"
+        else
+          echo "❌ Redis connectivity test failed"
+          exit 1
+        fi
+
+    - name: Display Connection Information
+      run: |
+        cd examples/simple
+        
+        echo "## Simple Example Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Deployment Information" >> $GITHUB_STEP_SUMMARY
+        echo "- Redis Name: ${{ steps.deploy.outputs.redis_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Resource Group: rg-azure-managed-redis-terraform" >> $GITHUB_STEP_SUMMARY
+        echo "- Location: East US" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Test Status" >> $GITHUB_STEP_SUMMARY
+        echo "✅ Deployment: Successful" >> $GITHUB_STEP_SUMMARY
+        echo "✅ Connectivity: Working" >> $GITHUB_STEP_SUMMARY
+        echo "✅ RedisJSON Module: Functional" >> $GITHUB_STEP_SUMMARY
+
+    - name: Clean Up Resources
+      if: always() && github.event.inputs.cleanup == 'true'
+      run: |
+        cd examples/simple
+        
+        echo "Cleaning up test resources..."
+        terraform destroy -auto-approve -input=false
+        echo "✅ Resources cleaned up"

@@ -33,3 +33,9 @@ variable "business_unit" {
   type        = string
   default     = "platform"
 }
+
+variable "create_resource_group" {
+  description = "Whether to create a new resource group or use an existing one"
+  type        = bool
+  default     = true
+}
