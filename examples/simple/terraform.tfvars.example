@@ -2,7 +2,7 @@
 # Copy this file and customize for your environment
 
 # Required variables
-resource_group_name = "rg-redis-simple-demo"
+resource_group_name = "rg-azure-managed-redis-terraform"
 location           = "East US"
 redis_name         = "redis-simple-demo"
 

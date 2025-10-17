@@ -1,7 +1,7 @@
 variable "resource_group_name" {
   description = "Name of the resource group to create the Redis Enterprise cluster in"
   type        = string
-  default     = "rg-redis-simple"
+  default     = "rg-azure-managed-redis-terraform"
 }
 
 variable "location" {

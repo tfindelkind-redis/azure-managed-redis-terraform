@@ -15,7 +15,7 @@ This example demonstrates the minimal configuration required to deploy Azure Man
 1. Update the variables in `terraform.tfvars`:
 
 ```hcl
-resource_group_name = "rg-redis-simple"
+resource_group_name = "rg-azure-managed-redis-terraform"
 location           = "East US"
 redis_name         = "redis-simple-demo"
 ```

@@ -13,7 +13,7 @@ variable "secondary_location" {
 variable "project_name" {
   description = "Project name for resource naming"
   type        = string
-  default     = "redis-multi-region"
+  default     = "azure-managed-redis-terraform"
 }
 
 variable "environment" {
