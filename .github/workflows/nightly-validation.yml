@@ -141,7 +141,7 @@ jobs:
         
         # Generate unique resource names
         TIMESTAMP=$(date +%Y%m%d%H%M%S)
-        RG_NAME="rg-redis-nightly-test-${TIMESTAMP}"
+        RG_NAME="rg-azure-managed-redis-terraform-test-${TIMESTAMP}"
         REDIS_NAME="redis-test-${TIMESTAMP}"
         
         # Create terraform.tfvars

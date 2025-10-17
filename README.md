@@ -105,7 +105,7 @@ code terraform.tfvars
 
 Example `terraform.tfvars`:
 ```hcl
-resource_group_name = "rg-redis-demo-$(whoami)"
+resource_group_name = "rg-azure-managed-redis-terraform"
 location           = "East US"
 redis_name         = "redis-demo-$(date +%s)"
 environment        = "demo"
@@ -195,7 +195,7 @@ provider "azapi" {}
 
 # Create resource group
 resource "azurerm_resource_group" "demo" {
-  name     = "rg-redis-demo"
+  name     = "rg-azure-managed-redis-terraform"
   location = "East US"
 }
 

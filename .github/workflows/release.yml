@@ -141,7 +141,7 @@ jobs:
             source = "git::https://github.com/tfindelkind-redis/azure-managed-redis-terraform.git//modules/managed-redis?ref=${{ github.ref_name }}"
             
             name                = "my-redis-cluster"
-            resource_group_name = "my-resource-group"
+            resource_group_name = "rg-azure-managed-redis-terraform"
             location            = "East US"
           }
           ```
