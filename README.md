@@ -1,16 +1,18 @@
 # Azure Managed Redis Terraform Module - Unofficial
 
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/tfindelkind-redis/azure-managed-redis-terraform)
-[![CI](https://github.com/tfindelkind-redis/azure-managed-redis-terraform/actions/workflows/ci.yml/badge.svg)](https://github.com/tfindelkind-redis/az## 📚 Examples
+[![CI](https://github.com/tfindelkind-redis/azure-managed-redis-terraform/actions/workflows/ci.yml/badge.svg)](https://github.com/tfindelkind-redis/azure-managed-redis-terraform/actions/workflows/ci.yml)
+[![Nightly Validation](https://github.com/tfindelkind-redis/azure-managed-redis-terraform/actions/workflows/nightly-validation.yml/badge.svg)](https://github.com/tfindelkind-redis/azure-managed-redis-terraform/actions/workflows/nightly-validation.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+## 📚 Examples
 
 | 📁 Example                                         | 📝 Description             | 🎯 Use Case                |
 |----------------------------------------------------|----------------------------|----------------------------|
 | [Simple](examples/simple/)                         | Basic deployment           | Development & testing      |
 | [With Modules](examples/with-modules/)             | Redis modules showcase     | Feature exploration        |
 | [High Availability](examples/high-availability/)   | HA configuration           | High-availability apps     |
-| [Multi-Region](examples/multi-region/)             | Global deployment          | Worldwide applications     |ged-redis-terraform/actions/workflows/ci.yml)
-[![Nightly Validation](https://github.com/tfindelkind-redis/azure-managed-redis-terraform/actions/workflows/nightly-validation.yml/badge.svg)](https://github.com/tfindelkind-redis/azure-managed-redis-terraform/actions/workflows/nightly-validation.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+| [Multi-Region](examples/multi-region/)             | Global deployment          | Worldwide applications     |
 
 > **Deploy Azure Managed Redis with Terraform — AzAPI Today, Native Tomorrow**
 
