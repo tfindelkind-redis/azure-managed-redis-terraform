@@ -27,9 +27,3 @@ variable "redis_sku" {
   type        = string
   default     = "Balanced_B3"
 }
-
-variable "enable_geo_replication" {
-  description = "Enable geo-replication between regions (future feature)"
-  type        = bool
-  default     = false
-}
