@@ -39,6 +39,13 @@ jobs:
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
         enable-AzPSSession: false
 
+    - name: Set ARM Environment Variables
+      run: |
+        echo "ARM_CLIENT_ID=${{ secrets.AZURE_CLIENT_ID }}" >> $GITHUB_ENV
+        echo "ARM_TENANT_ID=${{ secrets.AZURE_TENANT_ID }}" >> $GITHUB_ENV
+        echo "ARM_SUBSCRIPTION_ID=${{ secrets.AZURE_SUBSCRIPTION_ID }}" >> $GITHUB_ENV
+        echo "ARM_USE_OIDC=true" >> $GITHUB_ENV
+
     - name: Deploy Multi-Region Example
       id: deploy
       run: |
@@ -51,8 +58,8 @@ jobs:
         # Create terraform.tfvars
         cat > terraform.tfvars << EOF
         project_name = "${PROJECT_NAME}"
-        primary_location = "East US"
-        secondary_location = "West US 2"
+        primary_location = "eastus"
+        secondary_location = "westus2"
         environment = "testing"
         redis_sku = "Balanced_B1"
         EOF
@@ -84,7 +91,7 @@ jobs:
         # Set test data in primary
         redis-cli -u "$PRIMARY_CONNECTION" JSON.SET primary:test $ '{
           "region": "primary",
-          "location": "East US",
+          "location": "eastus",
           "test_data": "multi-region-primary-test",
           "timestamp": "'$(date -Iseconds)'"
         }'
@@ -113,7 +120,7 @@ jobs:
         # Set test data in secondary
         redis-cli -u "$SECONDARY_CONNECTION" JSON.SET secondary:test $ '{
           "region": "secondary",
-          "location": "West US 2",
+          "location": "westus2",
           "test_data": "multi-region-secondary-test",
           "timestamp": "'$(date -Iseconds)'"
         }'

@@ -1,0 +1,7 @@
+location                     = "westus2"
+redis_name                   = "redis-westus2-test-20251017135500"
+resource_group_name          = "rg-azure-managed-redis-terraform"
+create_resource_group        = false
+environment                  = "testing"
+cost_center                  = "development"
+owner                        = "platform-team"

@@ -39,6 +39,13 @@ jobs:
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
         enable-AzPSSession: false
 
+    - name: Set ARM Environment Variables
+      run: |
+        echo "ARM_CLIENT_ID=${{ secrets.AZURE_CLIENT_ID }}" >> $GITHUB_ENV
+        echo "ARM_TENANT_ID=${{ secrets.AZURE_TENANT_ID }}" >> $GITHUB_ENV
+        echo "ARM_SUBSCRIPTION_ID=${{ secrets.AZURE_SUBSCRIPTION_ID }}" >> $GITHUB_ENV
+        echo "ARM_USE_OIDC=true" >> $GITHUB_ENV
+
     - name: Deploy High-Availability Example
       id: deploy
       run: |
@@ -51,7 +58,7 @@ jobs:
         # Create terraform.tfvars
         cat > terraform.tfvars << EOF
         resource_group_name = "rg-azure-managed-redis-terraform"
-        location = "East US"
+        location = "eastus"
         redis_name = "${REDIS_NAME}"
         environment = "testing"
         create_resource_group = false
