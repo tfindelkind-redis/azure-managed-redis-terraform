@@ -6,7 +6,7 @@ This example demonstrates the minimal configuration required to deploy Azure Man
 
 - **Cluster**: Balanced_B0 SKU (minimal cost)
 - **Database**: Single database with default settings
-- **Modules**: RedisJSON only
+- **Modules**: None (basic Redis functionality only)
 - **High Availability**: Disabled (for cost optimization)
 - **TLS**: Version 1.2 (secure default)
 

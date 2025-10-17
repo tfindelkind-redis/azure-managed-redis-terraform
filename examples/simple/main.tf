@@ -28,8 +28,8 @@ module "redis_enterprise" {
 
   # Basic configuration - minimal cost
   sku               = "Balanced_B0"
-  modules           = ["RedisJSON"] # Single module only
-  high_availability = false         # Disabled for cost optimization
+  modules           = []    # No modules for simplicity
+  high_availability = false # Disabled for cost optimization
 
   # Security settings
   minimum_tls_version = "1.2"
