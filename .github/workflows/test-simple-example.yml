@@ -54,18 +54,20 @@ jobs:
         # Generate unique resource names
         TIMESTAMP=$(date +%Y%m%d%H%M%S)
         REDIS_NAME="redis-simple-test-${TIMESTAMP}"
+        RG_NAME="rg-redis-test-${TIMESTAMP}"
         
         # Create terraform.tfvars
         cat > terraform.tfvars << EOF
-        resource_group_name = "rg-azure-managed-redis-terraform"
-        location = "East US"
+        resource_group_name = "${RG_NAME}"
+        location = "West US 2"
         redis_name = "${REDIS_NAME}"
         environment = "testing"
-        create_resource_group = false
+        create_resource_group = true
         EOF
         
         echo "terraform_dir=$(pwd)" >> $GITHUB_OUTPUT
         echo "redis_name=${REDIS_NAME}" >> $GITHUB_OUTPUT
+        echo "resource_group_name=${RG_NAME}" >> $GITHUB_OUTPUT
         
         # Initialize and deploy
         terraform init
