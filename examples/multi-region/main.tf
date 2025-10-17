@@ -1,6 +1,6 @@
 # Primary region resource group
 resource "azurerm_resource_group" "primary" {
-  name     = "rg-${var.project_name}-${var.primary_location}"
+  name     = "rg-${var.project_name}-${replace(lower(var.primary_location), " ", "-")}"
   location = var.primary_location
 
   tags = {
@@ -12,7 +12,7 @@ resource "azurerm_resource_group" "primary" {
 
 # Secondary region resource group
 resource "azurerm_resource_group" "secondary" {
-  name     = "rg-${var.project_name}-${var.secondary_location}"
+  name     = "rg-${var.project_name}-${replace(lower(var.secondary_location), " ", "-")}"
   location = var.secondary_location
 
   tags = {
