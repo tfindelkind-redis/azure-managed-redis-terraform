@@ -106,7 +106,7 @@ code terraform.tfvars
 Example `terraform.tfvars`:
 ```hcl
 resource_group_name = "rg-azure-managed-redis-terraform"
-location           = "East US"
+location           = "eastus"
 redis_name         = "redis-demo-$(date +%s)"
 environment        = "demo"
 ```
@@ -196,7 +196,7 @@ provider "azapi" {}
 # Create resource group
 resource "azurerm_resource_group" "demo" {
   name     = "rg-azure-managed-redis-terraform"
-  location = "East US"
+  location = "eastus"
 }
 
 # Deploy Redis Enterprise
@@ -349,7 +349,7 @@ Deploy across multiple Azure regions for global applications:
 module "redis_primary" {
   source = "./modules/managed-redis"
   name   = "redis-primary"
-  location = "East US"
+  location = "eastus"
   # ... other configuration
 }
 
@@ -357,7 +357,7 @@ module "redis_primary" {
 module "redis_secondary" {
   source = "./modules/managed-redis"
   name   = "redis-secondary"
-  location = "West Europe"
+  location = "westeurope"
   # ... other configuration
 }
 ```
@@ -377,26 +377,49 @@ permissions:
   id-token: write   # Required for OIDC
   contents: read
 
+env:
+  TF_VERSION: "1.7.5"
+  ARM_SKIP_PROVIDER_REGISTRATION: "true"
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
     
-    - name: Azure CLI Login (OIDC)
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ${{ env.TF_VERSION }}
+    
+    - name: Azure CLI Login
       uses: azure/login@v2
       with:
         client-id: ${{ secrets.AZURE_CLIENT_ID }}
         tenant-id: ${{ secrets.AZURE_TENANT_ID }}
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-    
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v3
-      with:
-        terraform_version: '1.7.5'
+        enable-AzPSSession: false
+
+    - name: Set ARM Environment Variables
+      run: |
+        echo "ARM_CLIENT_ID=${{ secrets.AZURE_CLIENT_ID }}" >> $GITHUB_ENV
+        echo "ARM_TENANT_ID=${{ secrets.AZURE_TENANT_ID }}" >> $GITHUB_ENV
+        echo "ARM_SUBSCRIPTION_ID=${{ secrets.AZURE_SUBSCRIPTION_ID }}" >> $GITHUB_ENV
+        echo "ARM_USE_OIDC=true" >> $GITHUB_ENV
     
     - name: Deploy Redis Enterprise
       run: |
+        cd examples/simple
+        
+        # Create terraform.tfvars
+        cat > terraform.tfvars << EOF
+        resource_group_name = "rg-azure-managed-redis-terraform"
+        location = "eastus"
+        redis_name = "redis-demo-$(date +%Y%m%d%H%M%S)"
+        environment = "production"
+        create_resource_group = false
+        EOF
+        
         terraform init
         terraform plan
         terraform apply -auto-approve
@@ -417,7 +440,7 @@ jobs:
     ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
 ```
 
-> **Note**: OIDC authentication is recommended for better security (no stored secrets).
+> **Note**: OIDC authentication is recommended for better security (no stored secrets). The ARM environment variables step is **required** for the AzAPI provider to work with OIDC authentication, as the AzAPI provider needs explicit environment variables to authenticate properly.
 
 ### Azure DevOps
 
