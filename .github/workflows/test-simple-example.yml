@@ -58,7 +58,7 @@ jobs:
         # Create terraform.tfvars
         cat > terraform.tfvars << EOF
         resource_group_name = "rg-azure-managed-redis-terraform"
-        location = "East US"
+        location = "eastus"
         redis_name = "${REDIS_NAME}"
         environment = "testing"
         create_resource_group = false
