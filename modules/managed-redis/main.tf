@@ -1,10 +1,6 @@
 # Data sources
 data "azurerm_client_config" "current" {}
 
-data "azurerm_resource_group" "main" {
-  name = var.resource_group_name
-}
-
 # Redis Enterprise Cluster (AzAPI Implementation)
 resource "azapi_resource" "cluster" {
   count = var.use_azapi ? 1 : 0
