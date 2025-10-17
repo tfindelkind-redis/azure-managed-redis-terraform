@@ -128,13 +128,13 @@ jobs:
       run: tflint --init
 
     - name: Run TFLint on module
-      run: tflint --config=.tflint.hcl modules/managed-redis/
+      run: tflint --chdir=modules/managed-redis/ --config=../../.tflint.hcl
 
     - name: Run TFLint on examples
       run: |
         for example in examples/*/; do
           echo "Linting $example"
-          tflint --config=.tflint.hcl "$example"
+          tflint --chdir="$example" --config=../../.tflint.hcl
         done
 
   documentation:
