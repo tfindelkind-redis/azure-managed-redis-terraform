@@ -73,9 +73,6 @@ cd azure-managed-redis-terraform
 
 **Prerequisites**: Azure CLI and GitHub CLI authenticated
 
-#### 📖 Manual Setup
-For detailed setup instructions, see [AUTHENTICATION.md](./AUTHENTICATION.md).
-
 ### 🚀 Deploy in Codespaces (5 minutes)
 
 Once your Codespace opens:
@@ -441,18 +438,6 @@ jobs:
 ```
 
 > **Note**: OIDC authentication is recommended for better security (no stored secrets). The ARM environment variables step is **required** for the AzAPI provider to work with OIDC authentication, as the AzAPI provider needs explicit environment variables to authenticate properly.
-
-### Azure DevOps
-
-```yaml
-- task: TerraformTaskV4@4
-  displayName: 'Terraform Apply'
-  inputs:
-    provider: 'azurerm'
-    command: 'apply'
-    workingDirectory: '$(System.DefaultWorkingDirectory)'
-    commandOptions: '-auto-approve'
-```
 
 ## 🔄 Migration Path
 
