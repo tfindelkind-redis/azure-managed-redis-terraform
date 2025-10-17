@@ -170,17 +170,6 @@ modules = [
   "RedisTimeSeries" # Time-series data management
 ]
 ```
-
-### **Networking Considerations**
-
-Currently, Azure Managed Redis:
-- **Uses public endpoints** with TLS encryption and Redis AUTH
-- **Does not support** private endpoints or VNet integration (as of 2024)  
-- **Access control** through Redis passwords and Azure RBAC
-- **Network security** relies on Redis AUTH keys and Azure firewall rules
-
-For private networking, consider Azure Cache for Redis (classic) which supports VNet integration, or wait for future Azure Managed Redis networking features.
-
 ---
 
 ## Implementation: **AzAPI (Today)**

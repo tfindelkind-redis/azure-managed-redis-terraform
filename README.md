@@ -3,8 +3,8 @@
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/tfindelkind-redis/azure-managed-redis-terraform)
 [![CI](https://github.com/tfindelkind-redis/azure-managed-redis-terraform/actions/workflows/ci.yml/badge.svg)](https://github.com/tfindelkind-redis/az## 📚 Examples
 
-| 📁 Example                                          | 📝 Description            | 🎯 Use Case               |
-|-----------------------------------------------------|----------------------------|----------------------------|
+| 📁 Example                                         | 📝 Description             | 🎯 Use Case                |
+|----------------------------------------------------|----------------------------|----------------------------|
 | [Simple](examples/simple/)                         | Basic deployment           | Development & testing      |
 | [With Modules](examples/with-modules/)             | Redis modules showcase     | Feature exploration        |
 | [High Availability](examples/high-availability/)   | HA configuration           | High-availability apps     |
@@ -293,102 +293,22 @@ redis-cli -u "$CONNECTION_STRING" FT.CREATE users_idx ON JSON PREFIX 1 user: SCH
 - ✅ **Automated CI/CD** with GitHub Actions workflows
 - ✅ **Connection details** ready for your applications
 
-### Basic Deployment (Module Only)
-
-If you already have providers configured:
-
-```hcl
-module "redis_enterprise" {
-  source = "git::https://github.com/tfindelkind-redis/azure-managed-redis-terraform.git//modules/managed-redis"
-  
-  name                = "my-redis-cluster"
-  resource_group_name = "rg-redis-demo"
-  location            = "East US"
-  
-  # Basic configuration
-  sku     = "Balanced_B1"
-  modules = ["RedisJSON", "RediSearch"]
-  
-  # Security settings
-  high_availability   = true
-  minimum_tls_version = "1.2"
-}
-```
-
-### Production Deployment Example
-
-For production workloads with all Redis Enterprise modules:
-
-```hcl
-module "redis_enterprise_prod" {
-  source = "git::https://github.com/tfindelkind-redis/azure-managed-redis-terraform.git//modules/managed-redis"
-  
-  name                = "redis-prod"
-  resource_group_name = "rg-redis-production" 
-  location            = "East US"
-  
-  # Production SKU (26GB memory, high performance)
-  sku = "Balanced_B3"
-  
-  # Full Redis Enterprise module suite
-  modules = [
-    "RedisJSON",      # JSON document storage
-    "RediSearch",     # Full-text search & indexing
-    "RedisBloom",     # Probabilistic data structures  
-    "RedisTimeSeries" # Time series data handling
-  ]
-  
-  # Production settings
-  high_availability   = true
-  minimum_tls_version = "1.2"
-  zones              = ["1", "2", "3"]  # Multi-AZ deployment
-  
-  tags = {
-    Environment   = "production"
-    CriticalLevel = "tier1"
-    Owner         = "platform-team"
-  }
-}
-
-# Example outputs for production monitoring
-output "production_endpoints" {
-  value = {
-    primary_endpoint = "${module.redis_enterprise_prod.hostname}:${module.redis_enterprise_prod.port}"
-    health_check_url = "tcp://${module.redis_enterprise_prod.hostname}:${module.redis_enterprise_prod.port}"
-    azure_resource_id = module.redis_enterprise_prod.cluster_id
-  }
-}
-```
-
-## � Setup & Authentication Guide
-
-For comprehensive setup instructions including GitHub Codespaces configuration, Azure Service Principal creation, and GitHub Secrets management, see:
-
-**👉 [Complete Setup Guide](SETUP.md)**
-
-This guide covers:
-- 🚀 GitHub Codespaces quick start
-- 🔐 Azure Service Principal creation with Azure CLI
-- 🔑 GitHub Secrets configuration with GitHub CLI
-- ⚙️ CI/CD workflow authentication setup
-- 🛠️ Troubleshooting common authentication issues
-
 ## �📚 Examples
 
 | Example | Description | Use Case |
-|---------|-------------|----------|
-| [Simple](examples/simple/) | Basic deployment | Development & testing |
-| [With Modules](examples/with-modules/) | Redis modules showcase | Feature exploration |
-| [High Availability](examples/high-availability/) | HA configuration | High-availability apps |
-| [Multi-Region](examples/multi-region/) | Global deployment | Worldwide applications |
+|--------------------------------------------------|------------------------|------------------------|
+| [Simple](examples/simple/)                       | Basic deployment       | Development & testing  |
+| [With Modules](examples/with-modules/)           | Redis modules showcase | Feature exploration    |
+| [High Availability](examples/high-availability/) | HA configuration       | High-availability apps |
+| [Multi-Region](examples/multi-region/)           | Global deployment      | Worldwide applications |
 
 ## 🔧 Requirements
 
-| 📦 Component                                                                                                 | 📋 Version    |
+| 📦 Component                                                                                                | 📋 Version    |
 |-------------------------------------------------------------------------------------------------------------|---------------|
 | [Terraform](https://www.terraform.io/)                                                                      | `>= 1.3`      |
-| [AzAPI Provider](https://registry.terraform.io/providers/Azure/azapi/latest)                               | `~> 1.15`     |
-| [AzureRM Provider](https://registry.terraform.io/providers/hashicorp/azurerm/latest)                       | `~> 3.80`     |
+| [AzAPI Provider](https://registry.terraform.io/providers/Azure/azapi/latest)                                | `~> 1.15`     |
+| [AzureRM Provider](https://registry.terraform.io/providers/hashicorp/azurerm/latest)                        | `~> 3.80`     |
 
 ## 📋 Module Documentation
 
@@ -442,7 +362,45 @@ module "redis_secondary" {
 
 ## 🚀 CI/CD Integration
 
-### GitHub Actions
+### GitHub Actions with OIDC (Recommended)
+
+```yaml
+name: Deploy Redis Infrastructure
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  id-token: write   # Required for OIDC
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Azure CLI Login (OIDC)
+      uses: azure/login@v2
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+    
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: '1.7.5'
+    
+    - name: Deploy Redis Enterprise
+      run: |
+        terraform init
+        terraform plan
+        terraform apply -auto-approve
+```
+
+### GitHub Actions with Service Principal (Legacy)
 
 ```yaml
 - name: Deploy Redis Enterprise
@@ -456,6 +414,8 @@ module "redis_secondary" {
     ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
     ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
 ```
+
+> **Note**: OIDC authentication is recommended for better security (no stored secrets).
 
 ### Azure DevOps
 

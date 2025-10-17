@@ -12,6 +12,11 @@ on:
         default: false
         type: boolean
 
+permissions:
+  id-token: write    # Required for OIDC authentication
+  contents: read
+  issues: write      # Required for creating API update issues
+
 env:
   TF_VERSION: "1.6.0"
   ARM_SKIP_PROVIDER_REGISTRATION: "true"
@@ -31,6 +36,8 @@ jobs:
         client-id: ${{ secrets.AZURE_CLIENT_ID }}
         tenant-id: ${{ secrets.AZURE_TENANT_ID }}
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        auth-type: 'OIDC'
+        enable-AzPSSession: false
 
     - name: Check Latest Redis Enterprise API Version
       id: api_check
@@ -127,6 +134,8 @@ jobs:
         client-id: ${{ secrets.AZURE_CLIENT_ID }}
         tenant-id: ${{ secrets.AZURE_TENANT_ID }}
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        auth-type: 'OIDC'
+        enable-AzPSSession: false
 
     - name: Deploy Test Instance
       run: |
@@ -174,11 +183,6 @@ jobs:
         # Clean up resources
         echo "Cleaning up test resources..."
         terraform destroy -auto-approve -input=false
-      env:
-        ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
-        ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
-        ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-        ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
 
   region-availability-check:
     name: Check Region Availability
@@ -194,6 +198,8 @@ jobs:
         client-id: ${{ secrets.AZURE_CLIENT_ID }}
         tenant-id: ${{ secrets.AZURE_TENANT_ID }}
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        auth-type: 'OIDC'
+        enable-AzPSSession: false
 
     - name: Check Redis Enterprise Availability
       run: |
