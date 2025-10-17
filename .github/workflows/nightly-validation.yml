@@ -18,7 +18,7 @@ permissions:
   issues: write      # Required for creating API update issues
 
 env:
-  TF_VERSION: "1.6.0"
+  TF_VERSION: "1.7.5"
   ARM_SKIP_PROVIDER_REGISTRATION: "true"
 
 jobs:
