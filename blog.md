@@ -10,7 +10,7 @@ Azure Managed Redis brings the **power of Redis Enterprise** directly into Azure
 - Redis Enterprise's performance, modules, and HA capabilities  
 - Azure's managed experience, integrated billing, and security model  
 
-Managed Redis supports modules such as **RedisJSON**, **RediSearch**, **RedisBloom** and **RedisTimeSeries** will expand further as the service matures.
+Azure Managed Redis supports **RedisJSON**, **RediSearch**, **RedisBloom**, and **RedisTimeSeries** modules, with additional modules planned as the service matures.
 
 ### Azure Cache for Redis Retirement
 
@@ -111,14 +111,14 @@ output "hostname" {
 
 output "port" { value = 10000 }
 
-# Keys use direct property access (azapi_resource_action returns parsed objects)
+# Keys require jsondecode() because azapi_resource_action returns JSON string
 output "primary_key" { 
-  value     = data.azapi_resource_action.database_keys[0].output.primaryKey
+  value     = jsondecode(data.azapi_resource_action.database_keys[0].output).primaryKey
   sensitive = true 
 }
 
 output "secondary_key" { 
-  value     = data.azapi_resource_action.database_keys[0].output.secondaryKey
+  value     = jsondecode(data.azapi_resource_action.database_keys[0].output).secondaryKey
   sensitive = true 
 }
 ```
