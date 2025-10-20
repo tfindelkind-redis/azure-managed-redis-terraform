@@ -20,7 +20,7 @@ output "database_name" {
 
 output "hostname" {
   description = "The hostname of the Redis database"
-  value       = var.use_azapi ? jsondecode(azapi_resource.cluster[0].output).properties.hostName : null
+  value       = var.use_azapi ? jsondecode(data.azapi_resource.cluster_data[0].output).properties.hostName : null
 }
 
 output "port" {
@@ -45,7 +45,7 @@ output "connection_string" {
   value = var.use_azapi ? format(
     "rediss://:%s@%s:10000",
     jsondecode(data.azapi_resource_action.database_keys[0].output).primaryKey,
-    jsondecode(azapi_resource.cluster[0].output).properties.hostName
+    jsondecode(data.azapi_resource.cluster_data[0].output).properties.hostName
   ) : null
   sensitive = true
 }
@@ -55,7 +55,7 @@ output "connection_string_secondary" {
   value = var.use_azapi ? format(
     "rediss://:%s@%s:10000",
     jsondecode(data.azapi_resource_action.database_keys[0].output).secondaryKey,
-    jsondecode(azapi_resource.cluster[0].output).properties.hostName
+    jsondecode(data.azapi_resource.cluster_data[0].output).properties.hostName
   ) : null
   sensitive = true
 }

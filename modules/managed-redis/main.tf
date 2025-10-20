@@ -32,6 +32,16 @@ resource "azapi_resource" "cluster" {
   }
 }
 
+# Data source to read cluster properties after creation (AzAPI Implementation)
+data "azapi_resource" "cluster_data" {
+  count = var.use_azapi ? 1 : 0
+
+  type      = "Microsoft.Cache/redisEnterprise@${local.redis_enterprise_api_version}"
+  resource_id = azapi_resource.cluster[0].id
+
+  depends_on = [azapi_resource.cluster]
+}
+
 # Redis Database within the cluster (AzAPI Implementation)
 resource "azapi_resource" "database" {
   count = var.use_azapi ? 1 : 0
