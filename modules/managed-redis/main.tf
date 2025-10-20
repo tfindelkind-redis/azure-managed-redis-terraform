@@ -57,11 +57,11 @@ resource "azapi_resource" "database" {
       evictionPolicy   = var.eviction_policy
       clusteringPolicy = var.clustering_policy
       modules          = local.modules_config
-      
+
       # Required for API version 2025-05-01-preview and later
       deferUpgrade             = "NotDeferred"
       accessKeysAuthentication = "Enabled" # Must be Enabled to use listKeys operation
-      
+
       persistence = {
         aofEnabled = false
         rdbEnabled = false
