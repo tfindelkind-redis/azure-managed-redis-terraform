@@ -1,0 +1,13 @@
+# Example terraform.tfvars file for High-Availability example
+# Copy this file to terraform.tfvars and customize for your environment
+
+# Required variables
+resource_group_name = "rg-azure-managed-redis-terraform"
+location           = "eastus"
+redis_name         = "redis-ha-demo"
+
+# Optional variables - Production settings
+environment         = "production"
+business_unit       = "platform"
+availability_zones  = ["1", "2", "3"]  # Multi-AZ for maximum availability
+create_resource_group = true

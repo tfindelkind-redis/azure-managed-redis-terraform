@@ -13,6 +13,11 @@ output "cluster_name" {
   value       = module.redis_enterprise.cluster_name
 }
 
+output "database_id" {
+  description = "ID of the Redis database"
+  value       = module.redis_enterprise.database_id
+}
+
 output "hostname" {
   description = "Hostname of the Redis database"
   value       = module.redis_enterprise.hostname
