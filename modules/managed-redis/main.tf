@@ -14,9 +14,8 @@ resource "azapi_resource" "cluster" {
     sku = local.sku_config
 
     properties = {
-      highAvailability    = local.ha_config
-      minimumTlsVersion   = var.minimum_tls_version
-      publicNetworkAccess = "Enabled" # Required in API 2025-07-01
+      highAvailability  = local.ha_config
+      minimumTlsVersion = var.minimum_tls_version
     }
 
     zones = local.zones_config
@@ -58,6 +57,15 @@ resource "azapi_resource" "database" {
       evictionPolicy   = var.eviction_policy
       clusteringPolicy = var.clustering_policy
       modules          = local.modules_config
+      
+      # Required for API version 2025-05-01-preview and later
+      deferUpgrade             = "NotDeferred"
+      accessKeysAuthentication = "Disabled"
+      
+      persistence = {
+        aofEnabled = false
+        rdbEnabled = false
+      }
     }
   }
 

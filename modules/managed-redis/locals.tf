@@ -1,8 +1,8 @@
 locals {
   # Azure Redis Enterprise API version configuration
-  # Updated to GA version (2025-07-01) from preview (2024-09-01-preview)
-  # This is the first stable API version for Azure Managed Redis (GA: May 2025)
-  redis_enterprise_api_version = "2025-07-01"
+  # Using 2025-05-01-preview - matches working ARM template from portal
+  # Note: 2025-07-01 GA version has issues, using preview version that works
+  redis_enterprise_api_version = "2025-05-01-preview"
 
   # Common tags to apply to all resources
   common_tags = merge(var.tags, {
