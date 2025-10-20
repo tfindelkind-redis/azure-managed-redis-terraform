@@ -15,7 +15,7 @@ output "primary_cluster_id" {
 
 output "secondary_cluster_id" {
   description = "Secondary Redis Enterprise cluster ID"
-  value       = module.redis_secondary.cluster_id
+  value       = azapi_resource.secondary_cluster.id
 }
 
 output "primary_hostname" {
@@ -25,7 +25,7 @@ output "primary_hostname" {
 
 output "secondary_hostname" {
   description = "Secondary Redis database hostname"
-  value       = module.redis_secondary.hostname
+  value       = jsondecode(data.azapi_resource.secondary_cluster_data.output).properties.hostName
 }
 
 output "primary_connection_string" {
@@ -36,8 +36,17 @@ output "primary_connection_string" {
 
 output "secondary_connection_string" {
   description = "Secondary Redis connection string"
-  value       = module.redis_secondary.connection_string
-  sensitive   = true
+  value = format(
+    "rediss://:%s@%s:10000",
+    jsondecode(data.azapi_resource_action.secondary_database_keys.output).primaryKey,
+    jsondecode(data.azapi_resource.secondary_cluster_data.output).properties.hostName
+  )
+  sensitive = true
+}
+
+output "geo_replication_group_name" {
+  description = "Geo-replication group nickname"
+  value       = var.geo_replication_group_name
 }
 
 output "regions" {
@@ -57,18 +66,18 @@ output "failover_endpoints" {
       region   = var.primary_location
     }
     secondary = {
-      hostname = module.redis_secondary.hostname
-      port     = module.redis_secondary.port
+      hostname = jsondecode(data.azapi_resource.secondary_cluster_data.output).properties.hostName
+      port     = 10000
       region   = var.secondary_location
     }
   }
 }
 
 output "application_config" {
-  description = "Application configuration for multi-region setup"
+  description = "Application configuration for geo-replication setup"
   value = {
     primary_endpoint   = "${module.redis_primary.hostname}:${module.redis_primary.port}"
-    secondary_endpoint = "${module.redis_secondary.hostname}:${module.redis_secondary.port}"
+    secondary_endpoint = "${jsondecode(data.azapi_resource.secondary_cluster_data.output).properties.hostName}:10000"
     use_tls            = true
     connection_timeout = "5s"
     read_timeout       = "3s"
@@ -85,9 +94,9 @@ output "monitoring_endpoints" {
       cluster_id       = module.redis_primary.cluster_id
     }
     secondary = {
-      health_check_url = "tcp://${module.redis_secondary.hostname}:${module.redis_secondary.port}"
+      health_check_url = "tcp://${jsondecode(data.azapi_resource.secondary_cluster_data.output).properties.hostName}:10000"
       region           = var.secondary_location
-      cluster_id       = module.redis_secondary.cluster_id
+      cluster_id       = azapi_resource.secondary_cluster.id
     }
   }
 }

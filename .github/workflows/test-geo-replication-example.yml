@@ -1,4 +1,4 @@
-name: Test Multi-Region Example
+name: Test Geo-Replication Example
 
 on:
   workflow_dispatch:
@@ -18,8 +18,8 @@ env:
   ARM_SKIP_PROVIDER_REGISTRATION: "true"
 
 jobs:
-  test-multi-region:
-    name: Test Multi-Region Example
+  test-geo-replication:
+    name: Test Geo-Replication Example
     runs-on: ubuntu-latest
     
     steps:
@@ -46,14 +46,14 @@ jobs:
         echo "ARM_SUBSCRIPTION_ID=${{ secrets.AZURE_SUBSCRIPTION_ID }}" >> $GITHUB_ENV
         echo "ARM_USE_OIDC=true" >> $GITHUB_ENV
 
-    - name: Deploy Multi-Region Example
+    - name: Deploy Geo-Replication Example
       id: deploy
       run: |
-        cd examples/multi-region
+        cd examples/geo-replication
         
         # Generate unique resource names
         TIMESTAMP=$(date +%Y%m%d%H%M%S)
-        PROJECT_NAME="redis-multiregion-test-${TIMESTAMP}"
+        PROJECT_NAME="redis-geo-test-${TIMESTAMP}"
         
         # Create terraform.tfvars
         cat > terraform.tfvars << EOF
@@ -72,11 +72,11 @@ jobs:
         terraform plan -input=false
         terraform apply -auto-approve -input=false
         
-        echo "✅ Multi-region example deployed successfully"
+        echo "✅ Geo-replication example deployed successfully"
 
     - name: Test Primary Region Redis
       run: |
-        cd examples/multi-region
+        cd examples/geo-replication
         
         # Get primary connection string
         PRIMARY_CONNECTION=$(terraform output -raw primary_connection_string)
@@ -92,7 +92,7 @@ jobs:
         redis-cli -u "$PRIMARY_CONNECTION" JSON.SET primary:test $ '{
           "region": "primary",
           "location": "eastus",
-          "test_data": "multi-region-primary-test",
+          "test_data": "geo-replication-primary-test",
           "timestamp": "'$(date -Iseconds)'"
         }'
         
@@ -108,7 +108,7 @@ jobs:
 
     - name: Test Secondary Region Redis
       run: |
-        cd examples/multi-region
+        cd examples/geo-replication
         
         # Get secondary connection string
         SECONDARY_CONNECTION=$(terraform output -raw secondary_connection_string)
@@ -121,7 +121,7 @@ jobs:
         redis-cli -u "$SECONDARY_CONNECTION" JSON.SET secondary:test $ '{
           "region": "secondary",
           "location": "westus2",
-          "test_data": "multi-region-secondary-test",
+          "test_data": "geo-replication-secondary-test",
           "timestamp": "'$(date -Iseconds)'"
         }'
         
@@ -135,9 +135,9 @@ jobs:
           exit 1
         fi
 
-    - name: Test Multi-Region Search Capabilities
+    - name: Test Geo-Replication Search Capabilities
       run: |
-        cd examples/multi-region
+        cd examples/geo-replication
         
         PRIMARY_CONNECTION=$(terraform output -raw primary_connection_string)
         SECONDARY_CONNECTION=$(terraform output -raw secondary_connection_string)
@@ -155,17 +155,17 @@ jobs:
         SECONDARY_SEARCH=$(redis-cli -u "$SECONDARY_CONNECTION" FT.SEARCH idx:users "Alice")
         
         if [[ "$PRIMARY_SEARCH" == *"Laptop"* ]] && [[ "$SECONDARY_SEARCH" == *"Alice"* ]]; then
-          echo "✅ Multi-region search capabilities test successful"
+          echo "✅ Geo-replication search capabilities test successful"
         else
-          echo "❌ Multi-region search capabilities test failed"
+          echo "❌ Geo-replication search capabilities test failed"
           exit 1
         fi
 
     - name: Display Connection Information
       run: |
-        cd examples/multi-region
+        cd examples/geo-replication
         
-        echo "## Multi-Region Example Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "## Geo-Replication Example Test Results" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### Deployment Information" >> $GITHUB_STEP_SUMMARY
         echo "- Project Name: ${{ steps.deploy.outputs.project_name }}" >> $GITHUB_STEP_SUMMARY
@@ -184,7 +184,7 @@ jobs:
     - name: Clean Up Resources
       if: always() && github.event.inputs.cleanup == 'true'
       run: |
-        cd examples/multi-region
+        cd examples/geo-replication
         
         echo "Cleaning up test resources..."
         terraform destroy -auto-approve -input=false

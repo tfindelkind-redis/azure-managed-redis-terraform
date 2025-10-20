@@ -126,7 +126,7 @@ Welcome to your pre-configured development environment! Everything is ready to g
 - `examples/simple/` - Basic deployment example
 - `examples/with-modules/` - Advanced Redis modules
 - `examples/high-availability/` - Production setup
-- `examples/multi-region/` - Global deployment
+- `examples/geo-replication/` - Geo-replicated deployment
 - `scripts/` - Testing and validation scripts
 
 ## ⚡ Convenient Aliases

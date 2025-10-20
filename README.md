@@ -27,7 +27,7 @@ A Terraform module for deploying Azure Managed Redis (Redis Enterprise) with sea
 - **Redis Modules**: Support for RedisJSON, RediSearch, RedisBloom, RedisTimeSeries
 - **Configurable**: High availability, security, and monitoring options
 - **CI/CD Ready**: GitHub Actions workflows for automated validation and deployment
-- **Multi-Region**: Support for geo-distributed deployments
+- **Geo-Replication**: Support for active geo-replication across regions
 
 ## 🏗️ Architecture
 
@@ -289,7 +289,7 @@ redis-cli -u "$CONNECTION_STRING" FT.CREATE users_idx ON JSON PREFIX 1 user: SCH
 - ✅ **High availability** across availability zones
 - ✅ **TLS encryption** for all connections
 - ✅ **RedisJSON & RediSearch modules** enabled
-- ✅ **Comprehensive examples** from development to multi-region deployments
+- ✅ **Comprehensive examples** from development to geo-replication deployments
 - ✅ **Configurable security** with customizable security settings
 - ✅ **Automated CI/CD** with GitHub Actions workflows
 - ✅ **Connection details** ready for your applications
@@ -298,10 +298,10 @@ redis-cli -u "$CONNECTION_STRING" FT.CREATE users_idx ON JSON PREFIX 1 user: SCH
 
 | Example | Description | Use Case |
 |--------------------------------------------------|------------------------|------------------------|
-| [Simple](examples/simple/)                       | Basic deployment       | Development & testing  |
-| [With Modules](examples/with-modules/)           | Redis modules showcase | Feature exploration    |
-| [High Availability](examples/high-availability/) | HA configuration       | High-availability apps |
-| [Multi-Region](examples/multi-region/)           | Global deployment      | Worldwide applications |
+| [Simple](examples/simple/)                         | Single standalone cluster  | Development/testing        |
+| [With-Modules](examples/with-modules/)             | Cluster with Redis modules | Feature-rich applications  |
+| [High-Availability](examples/high-availability/)   | HA enabled cluster         | Production workloads       |
+| [Geo-Replication](examples/geo-replication/)       | Active geo-replication     | Worldwide applications     |
 
 ## 🔧 Requirements
 
@@ -342,9 +342,9 @@ For detailed input/output documentation, see: [Module Documentation](modules/man
 
 > **Note**: While this module provisions the Redis Enterprise cluster, private endpoints should be configured separately using Azure Private Link resources for enhanced network security. This is the recommended approach for production deployments.
 
-## 🌍 Multi-Region Support
+## 🌍 Geo-Replication Support
 
-Deploy across multiple Azure regions for global applications:
+Deploy with active geo-replication across Azure regions for global applications:
 
 ```hcl
 # Primary region
@@ -355,7 +355,7 @@ module "redis_primary" {
   # ... other configuration
 }
 
-# Secondary region  
+# Secondary region with geo-replication
 module "redis_secondary" {
   source = "./modules/managed-redis"
   name   = "redis-secondary"

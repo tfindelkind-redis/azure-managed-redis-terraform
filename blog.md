@@ -45,7 +45,7 @@ Since the azurerm provider doesn't yet support Azure Managed Redis, we can use t
 To demonstrate this AzAPI approach, we've created a comprehensive Terraform module that abstracts the complexity of Azure's REST APIs into a simple, reusable interface. This GitHub repository provides:
 
 - **Reusable Module**: A well-structured Terraform module following best practices
-- **Multiple Examples**: Four different deployment scenarios (simple, with-modules, HA, multi-region)
+- **Multiple Examples**: Four different deployment scenarios (simple, with-modules, HA, geo-replication)
 - **Testing Scripts**: Automated validation and connection testing utilities
 - **CI/CD Integration**: GitHub Actions workflows for continuous validation
 - **Documentation**: Complete usage guides and troubleshooting resources
@@ -323,7 +323,7 @@ azure-managed-redis-terraform/
     simple/                   # Basic Redis cluster for development
     with-modules/             # Showcase Redis modules (JSON, Search, etc.)  
     high-availability/        # HA configuration for critical workloads
-    multi-region/             # Global deployment pattern
+    geo-replication/          # Active geo-replication pattern
 ```
 
 ## Testing Your Deployment
@@ -383,7 +383,7 @@ terraform init && terraform apply
 - `simple/` - Basic Redis Enterprise cluster
 - `with-modules/` - Redis modules showcase  
 - `high-availability/` - HA configuration
-- `multi-region/` - Global deployment pattern
+- `geo-replication/` - Active geo-replication pattern
 
 ---
 

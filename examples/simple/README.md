@@ -58,4 +58,4 @@ This example uses:
 
 - See [with-modules example](../with-modules/) for advanced module configuration
 - See [high-availability example](../high-availability/) for production setup
-- Review [multi-region example](../multi-region/) for distributed deployments
+- Review [geo-replication example](../geo-replication/) for globally distributed deployments

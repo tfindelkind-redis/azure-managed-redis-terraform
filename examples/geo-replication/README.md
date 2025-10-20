@@ -1,14 +1,14 @@
-# Multi-Region Redis Enterprise Example
+# Geo-Replication Redis Enterprise Example
 
-This example demonstrates deploying Azure Managed Redis across multiple Azure regions for global applications requiring high availability and disaster recovery capabilities.
+This example demonstrates deploying Azure Managed Redis with active geo-replication across multiple Azure regions for global applications requiring high availability and disaster recovery capabilities.
 
 ## Architecture Overview
 
 ```
 ┌─────────────────┐       ┌─────────────────┐
-│   Primary       │       │   Secondary     │
-│   East US       │       │   West Europe   │
-│                 │       │                 │
+│   Primary       │◄─────►│   Secondary     │
+│   East US       │  Geo  │   West Europe   │
+│                 │  Rep  │                 │
 │ ┌─────────────┐ │       │ ┌─────────────┐ │
 │ │    Redis    │ │       │ │    Redis    │ │
 │ │ Enterprise  │ │       │ │ Enterprise  │ │
@@ -21,22 +21,23 @@ This example demonstrates deploying Azure Managed Redis across multiple Azure re
         └─────────────┬───────────┘
                       │
               Application Layer
-             (Handles Failover)
+             (Geo-Replicated)
 ```
 
 ## Features
 
-### High Availability
-- **Multi-Region Deployment**: Primary and secondary regions
+### Geo-Replication
+- **Active Geo-Replication**: Data replicated between regions
+- **Geo-Replication Group**: Named group for linked databases
+- **Automatic Synchronization**: Changes propagate across regions
 - **Availability Zones**: Deployed across 3 AZs in each region
-- **Regional Isolation**: Independent clusters for disaster recovery
 - **Production SKU**: Balanced_B3 for high performance
 
 ### Disaster Recovery
-- **RTO Target**: Recovery Time Objective through DNS failover
-- **RPO Target**: Recovery Point Objective via application-level replication
+- **RTO Target**: Recovery Time Objective through geo-replication
+- **RPO Target**: Near-zero data loss with active replication
 - **Health Monitoring**: Endpoints for health checks in both regions
-- **Failover Strategy**: Application-managed failover between regions
+- **Automatic Failover**: Built-in failover capabilities
 
 ### Security & Compliance
 - **TLS Encryption**: All connections encrypted
@@ -46,7 +47,7 @@ This example demonstrates deploying Azure Managed Redis across multiple Azure re
 
 ## Deployment
 
-### 1. Basic Multi-Region Setup
+### 1. Basic Geo-Replication Setup
 ```bash
 terraform init
 terraform plan \

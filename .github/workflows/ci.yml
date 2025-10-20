@@ -26,9 +26,9 @@ jobs:
         directory:
           - modules/managed-redis
           - examples/simple
-          - examples/with-modules  
+          - examples/with-modules
           - examples/high-availability
-          - examples/multi-region
+          - examples/geo-replication
     
     steps:
     - name: Checkout
@@ -61,7 +61,7 @@ jobs:
           - simple
           - with-modules
           - high-availability
-          - multi-region
+          - geo-replication
     
     steps:
     - name: Checkout

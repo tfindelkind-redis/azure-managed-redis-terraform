@@ -27,3 +27,9 @@ variable "redis_sku" {
   type        = string
   default     = "Balanced_B3"
 }
+
+variable "geo_replication_group_name" {
+  description = "Nickname for the geo-replication group"
+  type        = string
+  default     = "azure-managed-redis-geo-group"
+}
