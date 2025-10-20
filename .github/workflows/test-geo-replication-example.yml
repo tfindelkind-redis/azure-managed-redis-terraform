@@ -84,25 +84,67 @@ jobs:
         # Install redis-cli for testing
         sudo apt-get update && sudo apt-get install -y redis-tools
         
+        echo "⏳ Waiting for Azure Redis keys to propagate (this can take 20-40 seconds)..."
+        sleep 30
+        
+        # Retry function for Redis commands
+        retry_redis_command() {
+          local max_retries=3
+          local retry_delay=10
+          local attempt=1
+          local cmd="$@"
+          
+          while [ $attempt -le $max_retries ]; do
+            output=$(eval "$cmd" 2>&1)
+            exit_code=$?
+            
+            if echo "$output" | grep -q "WRONGPASS\|NOAUTH"; then
+              echo "⚠️  Attempt $attempt/$max_retries: Authentication still propagating, waiting ${retry_delay}s..."
+              sleep $retry_delay
+              attempt=$((attempt + 1))
+            elif [ $exit_code -eq 0 ]; then
+              echo "$output"
+              return 0
+            else
+              echo "❌ Command failed: $output"
+              return 1
+            fi
+          done
+          
+          echo "❌ Command failed after $max_retries attempts"
+          return 1
+        }
+        
         # Test primary region
-        echo "Testing primary region Redis connectivity..."
-        redis-cli -u "$PRIMARY_CONNECTION" ping
+        echo "Testing primary region Redis connectivity with PING..."
+        if ! retry_redis_command "redis-cli -u \"$PRIMARY_CONNECTION\" ping"; then
+          echo "❌ Primary PING test failed"
+          exit 1
+        fi
+        echo "✅ Primary PING successful"
         
         # Set test data in primary
-        redis-cli -u "$PRIMARY_CONNECTION" JSON.SET primary:test $ '{
-          "region": "primary",
-          "location": "eastus",
-          "test_data": "geo-replication-primary-test",
-          "timestamp": "'$(date -Iseconds)'"
-        }'
+        echo "Setting test data in primary region..."
+        if ! retry_redis_command "redis-cli -u \"$PRIMARY_CONNECTION\" JSON.SET primary:test $ '{
+          \"region\": \"primary\",
+          \"location\": \"eastus\",
+          \"test_data\": \"geo-replication-primary-test\",
+          \"timestamp\": \"'$(date -Iseconds)'\"
+        }'"; then
+          echo "❌ Primary JSON.SET failed"
+          exit 1
+        fi
+        echo "✅ Primary data set successfully"
         
         # Verify primary data
-        PRIMARY_RESULT=$(redis-cli -u "$PRIMARY_CONNECTION" JSON.GET primary:test $.region)
+        PRIMARY_RESULT=$(retry_redis_command "redis-cli -u \"$PRIMARY_CONNECTION\" JSON.GET primary:test $.region")
         
         if [ "$PRIMARY_RESULT" = '"primary"' ]; then
           echo "✅ Primary region Redis test successful"
+          echo "  - Result: $PRIMARY_RESULT"
         else
           echo "❌ Primary region Redis test failed"
+          echo "  - Result: $PRIMARY_RESULT"
           exit 1
         fi
 
@@ -113,25 +155,64 @@ jobs:
         # Get secondary connection string
         SECONDARY_CONNECTION=$(terraform output -raw secondary_connection_string)
         
+        # Retry function for Redis commands
+        retry_redis_command() {
+          local max_retries=3
+          local retry_delay=10
+          local attempt=1
+          local cmd="$@"
+          
+          while [ $attempt -le $max_retries ]; do
+            output=$(eval "$cmd" 2>&1)
+            exit_code=$?
+            
+            if echo "$output" | grep -q "WRONGPASS\|NOAUTH"; then
+              echo "⚠️  Attempt $attempt/$max_retries: Authentication still propagating, waiting ${retry_delay}s..."
+              sleep $retry_delay
+              attempt=$((attempt + 1))
+            elif [ $exit_code -eq 0 ]; then
+              echo "$output"
+              return 0
+            else
+              echo "❌ Command failed: $output"
+              return 1
+            fi
+          done
+          
+          echo "❌ Command failed after $max_retries attempts"
+          return 1
+        }
+        
         # Test secondary region
-        echo "Testing secondary region Redis connectivity..."
-        redis-cli -u "$SECONDARY_CONNECTION" ping
+        echo "Testing secondary region Redis connectivity with PING..."
+        if ! retry_redis_command "redis-cli -u \"$SECONDARY_CONNECTION\" ping"; then
+          echo "❌ Secondary PING test failed"
+          exit 1
+        fi
+        echo "✅ Secondary PING successful"
         
         # Set test data in secondary
-        redis-cli -u "$SECONDARY_CONNECTION" JSON.SET secondary:test $ '{
-          "region": "secondary",
-          "location": "westus2",
-          "test_data": "geo-replication-secondary-test",
-          "timestamp": "'$(date -Iseconds)'"
-        }'
+        echo "Setting test data in secondary region..."
+        if ! retry_redis_command "redis-cli -u \"$SECONDARY_CONNECTION\" JSON.SET secondary:test $ '{
+          \"region\": \"secondary\",
+          \"location\": \"westus2\",
+          \"test_data\": \"geo-replication-secondary-test\",
+          \"timestamp\": \"'$(date -Iseconds)'\"
+        }'"; then
+          echo "❌ Secondary JSON.SET failed"
+          exit 1
+        fi
+        echo "✅ Secondary data set successfully"
         
         # Verify secondary data
-        SECONDARY_RESULT=$(redis-cli -u "$SECONDARY_CONNECTION" JSON.GET secondary:test $.region)
+        SECONDARY_RESULT=$(retry_redis_command "redis-cli -u \"$SECONDARY_CONNECTION\" JSON.GET secondary:test $.region")
         
         if [ "$SECONDARY_RESULT" = '"secondary"' ]; then
           echo "✅ Secondary region Redis test successful"
+          echo "  - Result: $SECONDARY_RESULT"
         else
           echo "❌ Secondary region Redis test failed"
+          echo "  - Result: $SECONDARY_RESULT"
           exit 1
         fi
 
@@ -142,17 +223,52 @@ jobs:
         PRIMARY_CONNECTION=$(terraform output -raw primary_connection_string)
         SECONDARY_CONNECTION=$(terraform output -raw secondary_connection_string)
         
+        # Retry function for Redis commands
+        retry_redis_command() {
+          local max_retries=3
+          local retry_delay=10
+          local attempt=1
+          local cmd="$@"
+          
+          while [ $attempt -le $max_retries ]; do
+            output=$(eval "$cmd" 2>&1)
+            exit_code=$?
+            
+            if echo "$output" | grep -q "WRONGPASS\|NOAUTH"; then
+              echo "⚠️  Attempt $attempt/$max_retries: Authentication still propagating, waiting ${retry_delay}s..."
+              sleep $retry_delay
+              attempt=$((attempt + 1))
+            elif [ $exit_code -eq 0 ]; then
+              echo "$output"
+              return 0
+            else
+              echo "❌ Command failed: $output"
+              return 1
+            fi
+          done
+          
+          echo "❌ Command failed after $max_retries attempts"
+          return 1
+        }
+        
         # Test RediSearch in primary region
         echo "Testing RediSearch in primary region..."
-        redis-cli -u "$PRIMARY_CONNECTION" FT.CREATE idx:products ON JSON PREFIX 1 product: SCHEMA $.name AS name TEXT $.category AS category TAG
-        redis-cli -u "$PRIMARY_CONNECTION" JSON.SET product:1 $ '{"name":"Laptop","category":"Electronics","region":"primary"}'
-        PRIMARY_SEARCH=$(redis-cli -u "$PRIMARY_CONNECTION" FT.SEARCH idx:products "Laptop")
+        if ! retry_redis_command "redis-cli -u \"$PRIMARY_CONNECTION\" FT.CREATE idx:products ON JSON PREFIX 1 product: SCHEMA $.name AS name TEXT $.category AS category TAG"; then
+          echo "❌ Primary FT.CREATE failed"
+          exit 1
+        fi
+        retry_redis_command "redis-cli -u \"$PRIMARY_CONNECTION\" JSON.SET product:1 $ '{\"name\":\"Laptop\",\"category\":\"Electronics\",\"region\":\"primary\"}'" > /dev/null
+        PRIMARY_SEARCH=$(retry_redis_command "redis-cli -u \"$PRIMARY_CONNECTION\" FT.SEARCH idx:products \"Laptop\"")
+        echo "✅ Primary RediSearch test successful"
         
         # Test RediSearch in secondary region
         echo "Testing RediSearch in secondary region..."
-        redis-cli -u "$SECONDARY_CONNECTION" FT.CREATE idx:users ON JSON PREFIX 1 user: SCHEMA $.name AS name TEXT $.city AS city TAG
-        redis-cli -u "$SECONDARY_CONNECTION" JSON.SET user:1 $ '{"name":"Alice","city":"Seattle","region":"secondary"}'
-        SECONDARY_SEARCH=$(redis-cli -u "$SECONDARY_CONNECTION" FT.SEARCH idx:users "Alice")
+        if ! retry_redis_command "redis-cli -u \"$SECONDARY_CONNECTION\" FT.CREATE idx:users ON JSON PREFIX 1 user: SCHEMA $.name AS name TEXT $.city AS city TAG"; then
+          echo "❌ Secondary FT.CREATE failed"
+          exit 1
+        fi
+        retry_redis_command "redis-cli -u \"$SECONDARY_CONNECTION\" JSON.SET user:1 $ '{\"name\":\"Alice\",\"city\":\"Seattle\",\"region\":\"secondary\"}'" > /dev/null
+        SECONDARY_SEARCH=$(retry_redis_command "redis-cli -u \"$SECONDARY_CONNECTION\" FT.SEARCH idx:users \"Alice\"")
         
         if [[ "$PRIMARY_SEARCH" == *"Laptop"* ]] && [[ "$SECONDARY_SEARCH" == *"Alice"* ]]; then
           echo "✅ Geo-replication search capabilities test successful"

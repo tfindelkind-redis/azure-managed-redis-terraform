@@ -84,33 +84,86 @@ jobs:
         # Install redis-cli for testing
         sudo apt-get update && sudo apt-get install -y redis-tools
         
+        echo "⏳ Waiting for Azure Redis keys to propagate (this can take 20-40 seconds)..."
+        sleep 30
+        
+        # Retry function for Redis commands
+        retry_redis_command() {
+          local max_retries=3
+          local retry_delay=10
+          local attempt=1
+          local cmd="$@"
+          
+          while [ $attempt -le $max_retries ]; do
+            output=$(eval "$cmd" 2>&1)
+            exit_code=$?
+            
+            if echo "$output" | grep -q "WRONGPASS\|NOAUTH"; then
+              echo "⚠️  Attempt $attempt/$max_retries: Authentication still propagating, waiting ${retry_delay}s..."
+              sleep $retry_delay
+              attempt=$((attempt + 1))
+            elif [ $exit_code -eq 0 ]; then
+              echo "$output"
+              return 0
+            else
+              echo "❌ Command failed: $output"
+              return 1
+            fi
+          done
+          
+          echo "❌ Command failed after $max_retries attempts"
+          return 1
+        }
+        
         # Test basic Redis operations
-        echo "Testing Redis connectivity..."
-        redis-cli -u "$CONNECTION_STRING" ping
+        echo "Testing Redis connectivity with PING..."
+        if ! retry_redis_command "redis-cli -u \"$CONNECTION_STRING\" ping"; then
+          echo "❌ PING test failed"
+          exit 1
+        fi
+        echo "✅ PING successful"
         
         # Test RedisJSON module
         echo "Testing RedisJSON module..."
-        redis-cli -u "$CONNECTION_STRING" JSON.SET user:1 $ '{"name":"John","age":30,"city":"New York"}'
-        JSON_RESULT=$(redis-cli -u "$CONNECTION_STRING" JSON.GET user:1 $.name)
+        if ! retry_redis_command "redis-cli -u \"$CONNECTION_STRING\" JSON.SET user:1 $ '{\"name\":\"John\",\"age\":30,\"city\":\"New York\"}'"; then
+          echo "❌ JSON.SET failed"
+          exit 1
+        fi
+        JSON_RESULT=$(retry_redis_command "redis-cli -u \"$CONNECTION_STRING\" JSON.GET user:1 $.name")
+        echo "✅ RedisJSON test successful"
         
         # Test RediSearch module
         echo "Testing RediSearch module..."
-        redis-cli -u "$CONNECTION_STRING" FT.CREATE idx:users ON JSON PREFIX 1 user: SCHEMA $.name AS name TEXT $.age AS age NUMERIC
-        redis-cli -u "$CONNECTION_STRING" FT.SEARCH idx:users "John"
+        if ! retry_redis_command "redis-cli -u \"$CONNECTION_STRING\" FT.CREATE idx:users ON JSON PREFIX 1 user: SCHEMA $.name AS name TEXT $.age AS age NUMERIC"; then
+          echo "❌ FT.CREATE failed"
+          exit 1
+        fi
+        retry_redis_command "redis-cli -u \"$CONNECTION_STRING\" FT.SEARCH idx:users \"John\"" > /dev/null
+        echo "✅ RediSearch test successful"
         
         # Test RedisBloom module
         echo "Testing RedisBloom module..."
-        redis-cli -u "$CONNECTION_STRING" BF.ADD users_bloom "user:1"
-        BLOOM_RESULT=$(redis-cli -u "$CONNECTION_STRING" BF.EXISTS users_bloom "user:1")
+        if ! retry_redis_command "redis-cli -u \"$CONNECTION_STRING\" BF.ADD users_bloom \"user:1\""; then
+          echo "❌ BF.ADD failed"
+          exit 1
+        fi
+        BLOOM_RESULT=$(retry_redis_command "redis-cli -u \"$CONNECTION_STRING\" BF.EXISTS users_bloom \"user:1\"")
+        echo "✅ RedisBloom test successful"
         
         # Test RedisTimeSeries module
         echo "Testing RedisTimeSeries module..."
-        redis-cli -u "$CONNECTION_STRING" TS.CREATE temperature:room1 LABELS room 1 sensor temperature
-        redis-cli -u "$CONNECTION_STRING" TS.ADD temperature:room1 "*" 22.5
+        if ! retry_redis_command "redis-cli -u \"$CONNECTION_STRING\" TS.CREATE temperature:room1 LABELS room 1 sensor temperature"; then
+          echo "❌ TS.CREATE failed"
+          exit 1
+        fi
+        retry_redis_command "redis-cli -u \"$CONNECTION_STRING\" TS.ADD temperature:room1 \"*\" 22.5" > /dev/null
+        echo "✅ RedisTimeSeries test successful"
         
         # Validate results
         if [ "$JSON_RESULT" = '"John"' ] && [ "$BLOOM_RESULT" = "1" ]; then
           echo "✅ All Redis modules test successful"
+          echo "  - JSON result: $JSON_RESULT"
+          echo "  - Bloom result: $BLOOM_RESULT"
         else
           echo "❌ Redis modules test failed"
           echo "JSON result: $JSON_RESULT"
