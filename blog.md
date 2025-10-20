@@ -10,7 +10,7 @@ Azure Managed Redis brings the **power of Redis Enterprise** directly into Azure
 - Redis Enterprise's performance, modules, and HA capabilities  
 - Azure's managed experience, integrated billing, and security model  
 
-Azure Managed Redis supports **RedisJSON**, **RediSearch**, **RedisBloom**, and **RedisTimeSeries** modules, with additional modules planned as the service matures.
+Azure Managed Redis supports **RedisJSON**, **RediSearch**, **RedisBloom**, and **RedisTimeSeries** modules.
 
 ### Azure Cache for Redis Retirement
 
