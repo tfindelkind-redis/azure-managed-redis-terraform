@@ -89,13 +89,24 @@ variable "use_azapi"           { type = bool     default = true }
 
 ### Outputs
 ```hcl
+# Read cluster properties using data source (required for hostname)
+data "azapi_resource" "cluster_data" {
+  count                  = var.enable_database ? 1 : 0
+  type                   = "${local.redis_enterprise_type}@${local.redis_enterprise_api_version}"
+  resource_id            = azapi_resource.cluster.id
+  response_export_values = ["properties"]
+  depends_on             = [azapi_resource.database]
+}
+
 output "cluster_id"    { value = azapi_resource.cluster.id }
 output "database_id"   { value = azapi_resource.database.id }
-output "hostname"      { value = jsondecode(azapi_resource.database.output).properties.hostName }
-output "port"          { value = jsondecode(azapi_resource.database.output).properties.port }
-output "primary_key"   { value = data.azapi_resource_action.database_keys.output.primaryKey   sensitive = true }
-output "secondary_key" { value = data.azapi_resource_action.database_keys.output.secondaryKey sensitive = true }
+output "hostname"      { value = jsondecode(data.azapi_resource.cluster_data[0].output).properties.hostName }
+output "port"          { value = 10000 }
+output "primary_key"   { value = jsondecode(data.azapi_resource_action.database_keys.output).primaryKey   sensitive = true }
+output "secondary_key" { value = jsondecode(data.azapi_resource_action.database_keys.output).secondaryKey sensitive = true }
 ```
+
+**Important Note**: The hostname must be retrieved using a data source because it's only available after cluster creation. The data source output returns a JSON string, so `jsondecode()` is required to access nested properties.
 
 This contract remains identical when you later switch to native Terraform resources.
 
@@ -123,11 +134,13 @@ The module supports all major Azure Managed Redis configuration options:
 ### **Performance & Scaling**
 ```hcl
 # SKU options for different performance tiers
-sku = "Balanced_B0"        # Entry level
-sku = "Balanced_B1"        # Standard workloads  
-sku = "Balanced_B3"        # High throughput
-sku = "MemoryOptimized_M10" # Memory-intensive apps
-sku = "Flash_F300"         # Flash storage for large datasets
+sku = "Balanced_B0"            # Entry level - development
+sku = "Balanced_B1"            # Standard workloads  
+sku = "Balanced_B5"            # Production workloads
+sku = "MemoryOptimized_M10"    # Memory-intensive apps
+sku = "FlashOptimized_A250"    # Flash storage for large datasets (new naming)
+sku = "EnterpriseFlash_F300"   # Flash storage (legacy naming, still supported)
+sku = "ComputeOptimized_X10"   # Compute-intensive workloads
 ```
 
 ### **Security & Networking**  

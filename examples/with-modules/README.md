@@ -1,6 +1,6 @@
 # Redis with Modules Example
 
-This example demonstrates deploying Azure Managed Redis with multiple Redis Enterprise modules enabled using the latest API version `2025-05-01-preview`.
+This example demonstrates deploying Azure Managed Redis with multiple Redis Enterprise modules enabled.
 
 ## 🆕 New SKU Options Available
 
