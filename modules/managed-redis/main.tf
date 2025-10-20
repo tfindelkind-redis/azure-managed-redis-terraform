@@ -14,8 +14,9 @@ resource "azapi_resource" "cluster" {
     sku = local.sku_config
 
     properties = {
-      highAvailability  = local.ha_config
-      minimumTlsVersion = var.minimum_tls_version
+      highAvailability    = local.ha_config
+      minimumTlsVersion   = var.minimum_tls_version
+      publicNetworkAccess = "Enabled" # Required in API 2025-07-01
     }
 
     zones = local.zones_config
