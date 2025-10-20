@@ -1,6 +1,6 @@
 locals {
-  # API version for Redis Enterprise resources
-  redis_enterprise_api_version = "2025-05-01-preview"
+  # Azure Redis Enterprise API version configuration
+  redis_enterprise_api_version = "2025-04-01"
 
   # Common tags to apply to all resources
   common_tags = merge(var.tags, {
