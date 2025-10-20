@@ -30,21 +30,21 @@ output "port" {
 
 output "primary_key" {
   description = "The primary access key for the Redis database"
-  value       = var.use_azapi ? jsondecode(data.azapi_resource_action.database_keys[0].output).primaryKey : null
+  value       = var.use_azapi ? data.azapi_resource_action.database_keys[0].output.primaryKey : null
   sensitive   = true
 }
 
 output "secondary_key" {
   description = "The secondary access key for the Redis database"
-  value       = var.use_azapi ? jsondecode(data.azapi_resource_action.database_keys[0].output).secondaryKey : null
+  value       = var.use_azapi ? data.azapi_resource_action.database_keys[0].output.secondaryKey : null
   sensitive   = true
 }
 
 output "connection_string" {
   description = "Redis connection string"
   value = var.use_azapi ? format(
-    "rediss://default:%s@%s:10000",
-    jsondecode(data.azapi_resource_action.database_keys[0].output).primaryKey,
+    "rediss://:%s@%s:10000",
+    data.azapi_resource_action.database_keys[0].output.primaryKey,
     jsondecode(data.azapi_resource.cluster_data[0].output).properties.hostName
   ) : null
   sensitive = true
@@ -53,8 +53,8 @@ output "connection_string" {
 output "connection_string_secondary" {
   description = "Redis connection string using secondary key"
   value = var.use_azapi ? format(
-    "rediss://default:%s@%s:10000",
-    jsondecode(data.azapi_resource_action.database_keys[0].output).secondaryKey,
+    "rediss://:%s@%s:10000",
+    data.azapi_resource_action.database_keys[0].output.secondaryKey,
     jsondecode(data.azapi_resource.cluster_data[0].output).properties.hostName
   ) : null
   sensitive = true
