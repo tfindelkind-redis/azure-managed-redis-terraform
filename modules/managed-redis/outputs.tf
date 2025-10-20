@@ -104,7 +104,7 @@ output "test_connection_info" {
     hostname = jsondecode(data.azapi_resource.cluster_data[0].output).properties.hostName
     port     = 10000
     modules  = var.modules
-  } : {
+    } : {
     hostname = null
     port     = 10000
     modules  = []
