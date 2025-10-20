@@ -94,9 +94,9 @@ variable "tags"                { type = map(string) default = {} }
 ```hcl
 # Read cluster properties using data source (required for hostname)
 data "azapi_resource" "cluster_data" {
-  count                  = var.enable_database ? 1 : 0
-  type                   = "${local.redis_enterprise_type}@${local.redis_enterprise_api_version}"
-  resource_id            = azapi_resource.cluster.id
+  count                  = var.use_azapi ? 1 : 0
+  type                   = "Microsoft.Cache/redisEnterprise@${local.redis_enterprise_api_version}"
+  resource_id            = azapi_resource.cluster[0].id
   response_export_values = ["properties"]
   depends_on             = [azapi_resource.database]
 }
