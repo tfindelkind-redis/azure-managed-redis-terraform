@@ -13,9 +13,11 @@
 - Enhanced .gitignore with comprehensive Terraform file patterns (*.out, *.tfstate.backup, crash.log)
 
 ### Changed
-- **API Version**: Maintained `2024-09-01-preview` after testing newer versions
-  - Tested `2025-05-01-preview` and `2025-04-01` - both caused cluster creation failures
-  - Reverted to proven stable version `2024-09-01-preview` for reliability
+- **API Version**: Upgraded from `2024-09-01-preview` to `2025-07-01` (GA)
+  - First stable General Availability API version for Azure Managed Redis (GA: May 2025)
+  - Includes GA features: scaling, data persistence, and non-clustered clustering policy
+  - Previous testing of `2025-05-01-preview` and `2025-04-01` showed deployment failures (transitional versions)
+  - `2025-07-01` provides production SLA, stability guarantees, and full Microsoft support
 - **Output Structure**: Fixed hostname and connection string outputs using `jsondecode()` pattern
   - Data source outputs return JSON strings, not objects
   - All hostname references now use: `jsondecode(data.azapi_resource.cluster_data[0].output).properties.hostName`
