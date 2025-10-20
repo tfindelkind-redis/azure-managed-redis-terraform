@@ -60,7 +60,7 @@ A typical Azure Managed Redis setup consists of:
 
 1. A **Redis Enterprise Cluster** resource  
 2. One or more **Databases** under that cluster  
-3. Optional **Modules** (RedisJSON, RediSearch, RedisBloom)  
+3. Optional **Modules** (RedisJSON, RediSearch, RedisBloom, RedisTimeSeries)  
 4. **Access keys** managed securely through Azure APIs  
 
 Terraform provisions both cluster and database layers using the AzAPI provider — for now — until `azurerm` gains full native support.
@@ -122,10 +122,6 @@ output "secondary_key" {
   sensitive = true 
 }
 ```
-
-**Important Note**: Different AzAPI data sources return data in different formats:
-- `data.azapi_resource` returns a **JSON string** → requires `jsondecode()` for nested properties
-- `azapi_resource_action` with `response_export_values` returns **parsed objects** → use direct property access
 
 This contract remains identical when you later switch to native Terraform resources.
 
@@ -223,8 +219,8 @@ Since the `azurerm` provider doesn't yet expose Managed Redis resources, we use 
 ### Cluster
 ```hcl
 locals {
-  # Using 2025-05-01-preview for stable deployment
-  # Note: 2025-07-01 (GA) has known deployment issues
+  # Using 2025-05-01-preview to showcase new parameters like deferUpgrade and Azure Portal is using it atm
+  # Feel free to revert back to ""2025-05-01" and remove deferUpgrade and persistence
   redis_enterprise_api_version = "2025-05-01-preview"
 }
 
