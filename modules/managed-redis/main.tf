@@ -60,7 +60,7 @@ resource "azapi_resource" "database" {
       
       # Required for API version 2025-05-01-preview and later
       deferUpgrade             = "NotDeferred"
-      accessKeysAuthentication = "Disabled"
+      accessKeysAuthentication = "Enabled" # Must be Enabled to use listKeys operation
       
       persistence = {
         aofEnabled = false
