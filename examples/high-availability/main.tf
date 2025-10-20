@@ -30,10 +30,8 @@ module "redis_enterprise" {
   # Production SKU for performance and reliability
   sku = "Balanced_B3"
 
-  # Essential modules for production workloads
-  modules = [
-    "RedisJSON"
-  ]
+  # No additional modules for simplicity
+  modules = []
 
   # High availability and security settings
   high_availability   = true
