@@ -39,7 +39,8 @@ module "redis_primary" {
 
   high_availability   = true
   minimum_tls_version = "1.2"
-  zones               = ["1", "2", "3"]
+  # Note: Balanced_B3 SKU has zone redundancy enabled by default
+  # No need to explicitly specify zones parameter
 
   use_azapi = true
 
@@ -68,7 +69,8 @@ module "redis_secondary" {
 
   high_availability   = true
   minimum_tls_version = "1.2"
-  zones               = ["1", "2", "3"]
+  # Note: Balanced_B3 SKU has zone redundancy enabled by default
+  # No need to explicitly specify zones parameter
 
   use_azapi = true
 

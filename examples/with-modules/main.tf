@@ -43,7 +43,7 @@ module "redis_enterprise" {
   high_availability   = true
   minimum_tls_version = "1.2"
   client_protocol     = "Encrypted"
-  eviction_policy     = "AllKeysLRU" # Better for cache use cases
+  eviction_policy     = "NoEviction" # Required for RediSearch module
 
   # Use AzAPI for now (will switch to native when available)
   use_azapi = true
