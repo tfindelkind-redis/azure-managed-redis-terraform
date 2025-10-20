@@ -32,8 +32,7 @@ module "redis_enterprise" {
 
   # Essential modules for production workloads
   modules = [
-    "RedisJSON",
-    "RediSearch"
+    "RedisJSON"
   ]
 
   # High availability and security settings
