@@ -1,17 +1,6 @@
 # Deploy Azure Managed Redis with Terraform — AzAPI Today, Native Tomorrow
 
-> **TL;DR:*### Outputs
-```hcl
-# Read cluster properties using data source (required for hostname)
-data "azapi_resource" "cluster_data" {
-  count                  = var.use_azapi ? 1 : 0
-  type                   = "Microsoft.Cache/redisEnterprise@2024-09-01-preview"
-  resource_id            = azapi_resource.cluster[0].id
-  response_export_values = ["properties"]
-  depends_on             = [azapi_resource.database]
-}
-
-output "cluster_id"  { value = azapi_resource.cluster[0].id }ged Redis is here — a fully managed, Redis Enterprise–powered service. Terraform support is still catching up, but with an AzAPI module, you can deploy today and stay ready for tomorrow's provider updates.
+> **TL;DR:** Azure Managed Redis is here — a fully managed, Redis Enterprise–powered service. Terraform support is still catching up, but with an AzAPI module, you can deploy today and stay ready for tomorrow's provider updates.
 
 ---
 
