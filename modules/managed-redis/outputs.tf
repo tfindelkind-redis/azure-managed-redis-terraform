@@ -43,7 +43,7 @@ output "secondary_key" {
 output "connection_string" {
   description = "Redis connection string"
   value = var.use_azapi ? format(
-    "rediss://:%s@%s:10000",
+    "rediss://default:%s@%s:10000",
     jsondecode(data.azapi_resource_action.database_keys[0].output).primaryKey,
     jsondecode(data.azapi_resource.cluster_data[0].output).properties.hostName
   ) : null
@@ -53,7 +53,7 @@ output "connection_string" {
 output "connection_string_secondary" {
   description = "Redis connection string using secondary key"
   value = var.use_azapi ? format(
-    "rediss://:%s@%s:10000",
+    "rediss://default:%s@%s:10000",
     jsondecode(data.azapi_resource_action.database_keys[0].output).secondaryKey,
     jsondecode(data.azapi_resource.cluster_data[0].output).properties.hostName
   ) : null
