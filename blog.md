@@ -1,8 +1,17 @@
 # Deploy Azure Managed Redis with Terraform — AzAPI Today, Native Tomorrow
 
-*By Thomas Findelkind
+> **TL;DR:*### Outputs
+```hcl
+# Read cluster properties using data source (required for hostname)
+data "azapi_resource" "cluster_data" {
+  count                  = var.use_azapi ? 1 : 0
+  type                   = "Microsoft.Cache/redisEnterprise@2024-09-01-preview"
+  resource_id            = azapi_resource.cluster[0].id
+  response_export_values = ["properties"]
+  depends_on             = [azapi_resource.database]
+}
 
-> **TL;DR:** Azure Managed Redis is here — a fully managed, Redis Enterprise–powered service. Terraform support is still catching up, but with an AzAPI module, you can deploy today and stay ready for tomorrow's provider updates.
+output "cluster_id"  { value = azapi_resource.cluster[0].id }ged Redis is here — a fully managed, Redis Enterprise–powered service. Terraform support is still catching up, but with an AzAPI module, you can deploy today and stay ready for tomorrow's provider updates.
 
 ---
 
@@ -12,7 +21,7 @@ Azure Managed Redis brings the **power of Redis Enterprise** directly into Azure
 - Redis Enterprise's performance, modules, and HA capabilities  
 - Azure's managed experience, integrated billing, and security model  
 
-Managed Redis supports modules such as **RedisJSON**, **RediSearch**, and **RedisBloom**, and will expand further as the service matures.
+Managed Redis supports modules such as **RedisJSON**, **RediSearch**, **RedisBloom** and **RedisTimeSeries** will expand further as the service matures.
 
 ### Azure Cache for Redis Retirement
 
@@ -71,7 +80,7 @@ Terraform provisions both cluster and database layers using the AzAPI provider �
 
 ## Terraform Module Interface
 
-### Inputs
+### Inputs (Key Variables)
 ```hcl
 variable "name"                { type = string }
 variable "resource_group_name" { type = string }
@@ -84,8 +93,13 @@ variable "zones"               { type = list(string) default = [] }
 variable "eviction_policy"     { type = string   default = "NoEviction" }
 variable "client_protocol"     { type = string   default = "Encrypted" }
 variable "clustering_policy"   { type = string   default = "EnterpriseCluster" }
+variable "database_name"       { type = string   default = "default" }
+variable "port"                { type = number   default = 10000 }
 variable "use_azapi"           { type = bool     default = true }
+variable "tags"                { type = map(string) default = {} }
 ```
+
+> **Note**: This shows the most commonly used variables. See the [full module documentation](https://github.com/tfindelkind-redis/azure-managed-redis-terraform/tree/main/modules/managed-redis) for all available options.
 
 ### Outputs
 ```hcl
@@ -98,15 +112,31 @@ data "azapi_resource" "cluster_data" {
   depends_on             = [azapi_resource.database]
 }
 
-output "cluster_id"    { value = azapi_resource.cluster.id }
-output "database_id"   { value = azapi_resource.database.id }
-output "hostname"      { value = jsondecode(data.azapi_resource.cluster_data[0].output).properties.hostName }
-output "port"          { value = 10000 }
-output "primary_key"   { value = jsondecode(data.azapi_resource_action.database_keys.output).primaryKey   sensitive = true }
-output "secondary_key" { value = jsondecode(data.azapi_resource_action.database_keys.output).secondaryKey sensitive = true }
+output "cluster_id"  { value = azapi_resource.cluster[0].id }
+output "database_id" { value = azapi_resource.database[0].id }
+
+# Hostname requires jsondecode() because data.azapi_resource returns JSON string
+output "hostname" { 
+  value = jsondecode(data.azapi_resource.cluster_data[0].output).properties.hostName 
+}
+
+output "port" { value = 10000 }
+
+# Keys use direct property access (azapi_resource_action returns parsed objects)
+output "primary_key" { 
+  value     = data.azapi_resource_action.database_keys[0].output.primaryKey
+  sensitive = true 
+}
+
+output "secondary_key" { 
+  value     = data.azapi_resource_action.database_keys[0].output.secondaryKey
+  sensitive = true 
+}
 ```
 
-**Important Note**: The hostname must be retrieved using a data source because it's only available after cluster creation. The data source output returns a JSON string, so `jsondecode()` is required to access nested properties.
+**Important Note**: Different AzAPI data sources return data in different formats:
+- `data.azapi_resource` returns a **JSON string** → requires `jsondecode()` for nested properties
+- `azapi_resource_action` with `response_export_values` returns **parsed objects** → use direct property access
 
 This contract remains identical when you later switch to native Terraform resources.
 
@@ -160,11 +190,14 @@ client_protocol = "Encrypted"  # Encrypted (default) or Plaintext
 # Multi-zone deployment
 high_availability = true
 
-# Note: Zone redundancy behavior depends on SKU
-# - Higher-tier SKUs (e.g., Balanced_B3+) have built-in zone redundancy
-#   and don't require (or allow) explicit zones parameter
-# - Lower-tier SKUs can optionally specify zones for custom deployment
-zones = ["1", "2", "3"]    # Only for SKUs that support explicit zone configuration
+# Note: Zone redundancy behavior is SKU-dependent
+# - Higher-tier SKUs (Balanced_B3+, MemoryOptimized_M*, etc.) have AUTOMATIC zone redundancy
+#   These SKUs will REJECT deployment if you specify an explicit zones parameter
+# - Lower-tier SKUs (Balanced_B0, B1) can optionally specify explicit zones
+# - Best practice: Use high_availability = true and omit zones parameter
+
+# Only specify zones for lower-tier SKUs that support explicit zone configuration:
+# zones = ["1", "2", "3"]    # Use ONLY with Balanced_B0/B1 or similar lower-tier SKUs
 
 # Clustering for horizontal scale
 clustering_policy = "EnterpriseCluster"  # Redis Enterprise clustering (default)
@@ -200,40 +233,68 @@ Since the `azurerm` provider doesn't yet expose Managed Redis resources, we use 
 
 ### Cluster
 ```hcl
+locals {
+  redis_enterprise_api_version = "2024-09-01-preview"
+}
+
 resource "azapi_resource" "cluster" {
-  type      = "Microsoft.Cache/redisEnterprise@2024-09-01-preview"
+  count     = var.use_azapi ? 1 : 0
+  type      = "Microsoft.Cache/redisEnterprise@${local.redis_enterprise_api_version}"
   name      = var.name
   location  = var.location
-  parent_id = azurerm_resource_group.rg.id
-  body = {
-    sku = { name = var.sku }
+  parent_id = var.resource_group_id
+  
+  body = jsonencode({
+    sku = {
+      name = var.sku
+    }
     properties = {
-      highAvailability  = var.high_availability ? "Enabled" : "Disabled"
       minimumTlsVersion = var.minimum_tls_version
     }
-  }
-  zones = var.zones
+  })
+  
+  # Note: Do NOT specify zones for higher-tier SKUs (B3+) - they have automatic zone redundancy
+  # Uncomment only for lower-tier SKUs that support explicit zones:
+  # zones = var.zones
+  
+  tags                      = var.tags
   schema_validation_enabled = false
+  
+  timeouts {
+    create = "20m"
+    delete = "20m"
+  }
 }
 ```
 
 ### Database
 ```hcl
 resource "azapi_resource" "database" {
-  type      = "Microsoft.Cache/redisEnterprise/databases@2024-09-01-preview"
-  name      = "default"
-  parent_id = azapi_resource.cluster.id
-  body = {
+  count     = var.use_azapi ? 1 : 0
+  type      = "Microsoft.Cache/redisEnterprise/databases@${local.redis_enterprise_api_version}"
+  name      = var.database_name
+  parent_id = azapi_resource.cluster[0].id
+  
+  body = jsonencode({
     properties = {
-      clientProtocol   = "Encrypted"
-      evictionPolicy   = "NoEviction"
-      clusteringPolicy = "EnterpriseCluster"
+      clientProtocol   = var.client_protocol
+      evictionPolicy   = var.eviction_policy
+      clusteringPolicy = var.clustering_policy
+      port             = var.port
       modules          = [for m in var.modules : { name = m }]
     }
-  }
+  })
+  
   depends_on = [azapi_resource.cluster]
+  
+  timeouts {
+    create = "15m"
+    delete = "20m"
+  }
 }
 ```
+
+> **Note**: When using RediSearch module, `eviction_policy` must be set to `"NoEviction"`. For cache-only scenarios, `"AllKeysLRU"` is commonly used.
 
 ### Access Keys (no scripts needed)
 ```hcl
@@ -275,17 +336,28 @@ After deployment, validate your Redis cluster with the included testing scripts:
 
 Or test manually:
 ```bash
-# Basic PING test
-redis-cli -h myredis.eastus.redisenterprise.cache.azure.net -p 10000 -a <password> ping
+# Using connection URL format (recommended - handles TLS automatically)
+redis-cli -u "rediss://:<password>@myredis.eastus.redisenterprise.cache.azure.net:10000" ping
+
+# Or with explicit TLS flag
+redis-cli -h myredis.eastus.redisenterprise.cache.azure.net -p 10000 --tls -a <password> ping
 
 # Test RedisJSON module
-redis-cli -h myredis.eastus.redisenterprise.cache.azure.net -p 10000 -a <password> \
+redis-cli -u "rediss://:<password>@myredis.eastus.redisenterprise.cache.azure.net:10000" \
   JSON.SET user:123 $ '{"name":"John","age":30}'
 
-# Test RediSearch module  
-redis-cli -h myredis.eastus.redisenterprise.cache.azure.net -p 10000 -a <password> \
+redis-cli -u "rediss://:<password>@myredis.eastus.redisenterprise.cache.azure.net:10000" \
+  JSON.GET user:123
+
+# Test RediSearch module (requires eviction_policy = "NoEviction")
+redis-cli -u "rediss://:<password>@myredis.eastus.redisenterprise.cache.azure.net:10000" \
   FT.CREATE idx:users ON JSON PREFIX 1 user: SCHEMA $.name TEXT
+
+redis-cli -u "rediss://:<password>@myredis.eastus.redisenterprise.cache.azure.net:10000" \
+  FT.SEARCH idx:users '*'
 ```
+
+> **Note**: Azure Managed Redis uses TLS encryption by default. Always use `rediss://` (with double 's') in connection URLs or `--tls` flag with redis-cli.
 
 For visual management, use [RedisInsight](https://redis.io/insight/) with your connection details.
 
