@@ -25,12 +25,31 @@ variable "sku" {
 
   validation {
     condition = contains([
-      "Balanced_B0", "Balanced_B1", "Balanced_B3", "Balanced_B5",
-      "ComputeOptimized_X3", "ComputeOptimized_X5", "ComputeOptimized_X10",
-      "MemoryOptimized_M10", "MemoryOptimized_M20",
-      "Flash_F300", "Flash_F700", "Flash_F1500"
+      # Enterprise SKUs
+      "Enterprise_E1", "Enterprise_E5", "Enterprise_E10", "Enterprise_E20", 
+      "Enterprise_E50", "Enterprise_E100", "Enterprise_E200", "Enterprise_E400",
+      # Enterprise Flash SKUs
+      "EnterpriseFlash_F300", "EnterpriseFlash_F700", "EnterpriseFlash_F1500",
+      # Balanced SKUs (new expanded range)
+      "Balanced_B0", "Balanced_B1", "Balanced_B3", "Balanced_B5", "Balanced_B10", 
+      "Balanced_B20", "Balanced_B50", "Balanced_B100", "Balanced_B150", 
+      "Balanced_B250", "Balanced_B350", "Balanced_B500", "Balanced_B700", "Balanced_B1000",
+      # Memory Optimized SKUs (greatly expanded)
+      "MemoryOptimized_M10", "MemoryOptimized_M20", "MemoryOptimized_M50", 
+      "MemoryOptimized_M100", "MemoryOptimized_M150", "MemoryOptimized_M250", 
+      "MemoryOptimized_M350", "MemoryOptimized_M500", "MemoryOptimized_M700", 
+      "MemoryOptimized_M1000", "MemoryOptimized_M1500", "MemoryOptimized_M2000",
+      # Compute Optimized SKUs (expanded)
+      "ComputeOptimized_X3", "ComputeOptimized_X5", "ComputeOptimized_X10", 
+      "ComputeOptimized_X20", "ComputeOptimized_X50", "ComputeOptimized_X100", 
+      "ComputeOptimized_X150", "ComputeOptimized_X250", "ComputeOptimized_X350", 
+      "ComputeOptimized_X500", "ComputeOptimized_X700",
+      # Flash Optimized SKUs (completely new!)
+      "FlashOptimized_A250", "FlashOptimized_A500", "FlashOptimized_A700", 
+      "FlashOptimized_A1000", "FlashOptimized_A1500", "FlashOptimized_A2000", 
+      "FlashOptimized_A4500"
     ], var.sku)
-    error_message = "SKU must be a valid Azure Managed Redis SKU."
+    error_message = "SKU must be a valid Azure Redis Enterprise SKU. See https://docs.microsoft.com/en-us/azure/azure-cache-for-redis/cache-overview#service-tiers for valid options."
   }
 }
 

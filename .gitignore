@@ -1,11 +1,23 @@
 # Terraform files
 *.tfstate
 *.tfstate.*
+*.tfstate.backup
 *.tfplan
+*.tfplan.*
+*.out
+plan.out
+crash.log
+crash.*.log
 *.tfvars
+*.tfvars.json
 !terraform.tfvars.example
+!*.tfvars.example
 .terraform/
 .terraform.lock.hcl
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
 
 # IDE files
 .vscode/

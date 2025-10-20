@@ -1,6 +1,14 @@
 # Redis with Modules Example
 
-This example demonstrates deploying Azure Managed Redis with multiple Redis Enterprise modules enabled.
+This example demonstrates deploying Azure Managed Redis with multiple Redis Enterprise modules enabled using the latest API version `2025-05-01-preview`.
+
+## 🆕 New SKU Options Available
+
+With the latest API update, you can now use enhanced SKU options for better performance:
+
+- **Flash Optimized**: `FlashOptimized_A250` - `FlashOptimized_A4500` (NEW! - Optimized for high throughput)
+- **Memory Optimized**: `MemoryOptimized_M50` - `MemoryOptimized_M2000` (Expanded range)
+- **Balanced**: `Balanced_B10` - `Balanced_B1000` (More size options)
 
 ## Enabled Modules
 
