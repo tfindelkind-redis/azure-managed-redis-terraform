@@ -20,7 +20,7 @@ output "database_name" {
 
 output "hostname" {
   description = "The hostname of the Redis database"
-  value       = var.use_azapi ? jsondecode(data.azapi_resource.cluster_data[0].output).properties.hostName : null
+  value       = var.use_azapi ? data.azapi_resource.cluster_data[0].output.properties.hostName : null
 }
 
 output "port" {
@@ -45,7 +45,7 @@ output "connection_string" {
   value = var.use_azapi ? format(
     "rediss://:%s@%s:10000",
     jsondecode(data.azapi_resource_action.database_keys[0].output).primaryKey,
-    jsondecode(data.azapi_resource.cluster_data[0].output).properties.hostName
+    data.azapi_resource.cluster_data[0].output.properties.hostName
   ) : null
   sensitive = true
 }
@@ -55,7 +55,7 @@ output "connection_string_secondary" {
   value = var.use_azapi ? format(
     "rediss://:%s@%s:10000",
     jsondecode(data.azapi_resource_action.database_keys[0].output).secondaryKey,
-    jsondecode(data.azapi_resource.cluster_data[0].output).properties.hostName
+    data.azapi_resource.cluster_data[0].output.properties.hostName
   ) : null
   sensitive = true
 }
@@ -88,4 +88,21 @@ output "high_availability_enabled" {
 output "minimum_tls_version" {
   description = "The minimum TLS version configured for the cluster"
   value       = var.minimum_tls_version
+}
+
+output "redis_cli_command" {
+  description = "Redis CLI command to connect to the database"
+  value = var.use_azapi ? format(
+    "redis-cli -h %s -p 10000 -a '<primary_key>'",
+    data.azapi_resource.cluster_data[0].output.properties.hostName
+  ) : null
+}
+
+output "test_connection_info" {
+  description = "Information for testing the Redis connection"
+  value = var.use_azapi ? {
+    hostname = data.azapi_resource.cluster_data[0].output.properties.hostName
+    port     = 10000
+    modules  = var.modules
+  } : {}
 }
