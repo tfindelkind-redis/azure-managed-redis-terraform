@@ -84,32 +84,80 @@ jobs:
         # Install redis-cli for testing
         sudo apt-get update && sudo apt-get install -y redis-tools
         
+        echo "⏳ Waiting for Azure Redis keys to propagate (this can take 20-40 seconds)..."
+        sleep 30
+        
+        # Retry function for Redis commands
+        retry_redis_command() {
+          local max_retries=3
+          local retry_delay=10
+          local attempt=1
+          local cmd="$@"
+          
+          while [ $attempt -le $max_retries ]; do
+            output=$(eval "$cmd" 2>&1)
+            exit_code=$?
+            
+            if echo "$output" | grep -q "WRONGPASS\|NOAUTH"; then
+              echo "⚠️  Attempt $attempt/$max_retries: Authentication still propagating, waiting ${retry_delay}s..."
+              sleep $retry_delay
+              attempt=$((attempt + 1))
+            elif [ $exit_code -eq 0 ]; then
+              echo "$output"
+              return 0
+            else
+              echo "❌ Command failed: $output"
+              return 1
+            fi
+          done
+          
+          echo "❌ Command failed after $max_retries attempts"
+          return 1
+        }
+        
         # Test basic Redis operations
-        echo "Testing Redis connectivity..."
-        redis-cli -u "$CONNECTION_STRING" ping
+        echo "Testing Redis connectivity with PING..."
+        if ! retry_redis_command "redis-cli -u \"$CONNECTION_STRING\" ping"; then
+          echo "❌ PING test failed"
+          exit 1
+        fi
+        echo "✅ PING successful"
         
         # Test high-availability specific features
         echo "Testing high-availability configuration..."
         
         # Set some test data
-        redis-cli -u "$CONNECTION_STRING" SET ha_test_key "high-availability-test-$(date +%s)"
+        echo "Setting test key..."
+        if ! retry_redis_command "redis-cli -u \"$CONNECTION_STRING\" SET ha_test_key \"high-availability-test-\$(date +%s)\""; then
+          echo "❌ SET command failed"
+          exit 1
+        fi
+        echo "✅ SET successful"
         
         # Test RedisJSON with complex data
-        redis-cli -u "$CONNECTION_STRING" JSON.SET ha:config $ '{
-          "cluster": {
-            "high_availability": true,
-            "zones": ["1", "2", "3"],
-            "minimum_tls_version": "1.2"
+        echo "Setting JSON data..."
+        if ! retry_redis_command "redis-cli -u \"$CONNECTION_STRING\" JSON.SET ha:config $ '{
+          \"cluster\": {
+            \"high_availability\": true,
+            \"zones\": [\"1\", \"2\", \"3\"],
+            \"minimum_tls_version\": \"1.2\"
           },
-          "test_timestamp": "'$(date -Iseconds)'"
-        }'
+          \"test_timestamp\": \"'$(date -Iseconds)'\"
+        }'"; then
+          echo "❌ JSON.SET command failed"
+          exit 1
+        fi
+        echo "✅ JSON.SET successful"
         
         # Verify data persistence
-        HA_RESULT=$(redis-cli -u "$CONNECTION_STRING" GET ha_test_key)
-        JSON_RESULT=$(redis-cli -u "$CONNECTION_STRING" JSON.GET ha:config $.cluster.high_availability)
+        echo "Verifying data persistence..."
+        HA_RESULT=$(retry_redis_command "redis-cli -u \"$CONNECTION_STRING\" GET ha_test_key")
+        JSON_RESULT=$(retry_redis_command "redis-cli -u \"$CONNECTION_STRING\" JSON.GET ha:config $.cluster.high_availability")
         
         if [[ "$HA_RESULT" == *"high-availability-test"* ]] && [ "$JSON_RESULT" = "true" ]; then
           echo "✅ High-availability Redis test successful"
+          echo "  - Basic GET result: $HA_RESULT"
+          echo "  - JSON GET result: $JSON_RESULT"
         else
           echo "❌ High-availability Redis test failed"
           echo "HA result: $HA_RESULT"
@@ -127,18 +175,30 @@ jobs:
         echo "Testing zone redundancy capabilities..."
         
         # Create multiple keys to test distribution
+        echo "Creating test keys across zones..."
         for i in {1..10}; do
-          redis-cli -u "$CONNECTION_STRING" SET "zone_test_key_$i" "zone_data_$i"
+          if ! redis-cli -u "$CONNECTION_STRING" SET "zone_test_key_$i" "zone_data_$i" > /dev/null 2>&1; then
+            echo "⚠️  Key $i failed, retrying..."
+            sleep 5
+            redis-cli -u "$CONNECTION_STRING" SET "zone_test_key_$i" "zone_data_$i"
+          fi
         done
         
         # Verify all keys are accessible
-        KEYS_COUNT=$(redis-cli -u "$CONNECTION_STRING" KEYS "zone_test_key_*" | wc -l)
+        KEYS_COUNT=$(redis-cli -u "$CONNECTION_STRING" KEYS "zone_test_key_*" 2>/dev/null | wc -l)
         
         if [ "$KEYS_COUNT" -eq 10 ]; then
-          echo "✅ Zone redundancy test successful - all keys accessible"
+          echo "✅ Zone redundancy test successful - all $KEYS_COUNT keys accessible"
         else
-          echo "❌ Zone redundancy test failed - only $KEYS_COUNT keys found"
-          exit 1
+          echo "⚠️  Only $KEYS_COUNT/10 keys found, retrying count..."
+          sleep 5
+          KEYS_COUNT=$(redis-cli -u "$CONNECTION_STRING" KEYS "zone_test_key_*" 2>/dev/null | wc -l)
+          if [ "$KEYS_COUNT" -eq 10 ]; then
+            echo "✅ Zone redundancy test successful - all $KEYS_COUNT keys accessible"
+          else
+            echo "❌ Zone redundancy test failed - only $KEYS_COUNT keys found"
+            exit 1
+          fi
         fi
 
     - name: Display Connection Information
