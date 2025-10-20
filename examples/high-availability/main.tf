@@ -42,8 +42,8 @@ module "redis_enterprise" {
   client_protocol     = "Encrypted"
   eviction_policy     = "AllKeysLRU"
 
-  # Multi-AZ deployment for maximum availability
-  zones = var.availability_zones
+  # Note: Balanced_B3 SKU has zone redundancy enabled by default in regions with availability zones
+  # No need to explicitly specify zones parameter
 
   # Use AzAPI for now (will switch to native when available)  
   use_azapi = true
