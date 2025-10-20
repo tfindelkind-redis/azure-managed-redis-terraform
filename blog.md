@@ -234,7 +234,9 @@ Since the `azurerm` provider doesn't yet expose Managed Redis resources, we use 
 ### Cluster
 ```hcl
 locals {
-  redis_enterprise_api_version = "2024-09-01-preview"
+  # Using 2025-05-01-preview for stable deployment
+  # Note: 2025-07-01 (GA) has known deployment issues
+  redis_enterprise_api_version = "2025-05-01-preview"
 }
 
 resource "azapi_resource" "cluster" {
@@ -282,6 +284,18 @@ resource "azapi_resource" "database" {
       clusteringPolicy = var.clustering_policy
       port             = var.port
       modules          = [for m in var.modules : { name = m }]
+      
+      # Required properties for API version 2025-05-01-preview
+      deferUpgrade = "NotDeferred"
+      
+      # Must be "Enabled" for Terraform to use listKeys operation
+      # Note: Portal deployments may use "Disabled" but Terraform requires "Enabled"
+      accessKeysAuthentication = "Enabled"
+      
+      persistence = {
+        aofEnabled = false
+        rdbEnabled = false
+      }
     }
   })
   
@@ -294,12 +308,15 @@ resource "azapi_resource" "database" {
 }
 ```
 
-> **Note**: When using RediSearch module, `eviction_policy` must be set to `"NoEviction"`. For cache-only scenarios, `"AllKeysLRU"` is commonly used.
+> **Important Notes**: 
+> - When using RediSearch module, `eviction_policy` must be set to `"NoEviction"`
+> - `accessKeysAuthentication` must be `"Enabled"` for Terraform to retrieve keys via the listKeys API
+> - Portal deployments may use `"Disabled"` for this setting, but Terraform automation requires `"Enabled"`
 
 ### Access Keys (no scripts needed)
 ```hcl
 data "azapi_resource_action" "database_keys" {
-  type        = "Microsoft.Cache/redisEnterprise/databases@2024-09-01-preview"
+  type        = "Microsoft.Cache/redisEnterprise/databases@${local.redis_enterprise_api_version}"
   resource_id = azapi_resource.database.id
   action      = "listKeys"
   method      = "POST"
@@ -308,6 +325,8 @@ data "azapi_resource_action" "database_keys" {
 ```
 
 This calls Azure's documented **List Keys** API action — no `null_resource`, no local scripts, just clean data source logic.
+
+> **Note**: The listKeys operation requires `accessKeysAuthentication = "Enabled"` in the database configuration. This is why Terraform deployments differ slightly from portal ARM templates that may use `"Disabled"`.
 
 ## Available Examples
 
