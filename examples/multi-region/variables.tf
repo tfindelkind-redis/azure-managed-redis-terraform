@@ -1,7 +1,7 @@
 variable "primary_location" {
   description = "Primary Azure region"
   type        = string
-  default     = "East US"
+  default     = "eastus"
 }
 
 variable "secondary_location" {
