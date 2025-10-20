@@ -333,11 +333,14 @@ For detailed input/output documentation, see: [Module Documentation](modules/man
 
 ## 🔐 Security Best Practices
 
-- ✅ **TLS Encryption**: All connections encrypted by default
+- ✅ **TLS Encryption**: All connections encrypted by default (minimum TLS 1.2)
 - ✅ **Secure Keys**: API-based key retrieval (no CLI scripts)
 - ✅ **Sensitive Outputs**: Access keys marked as sensitive
-- ✅ **Network Security**: Private endpoint support
+- ✅ **Network Security**: Private endpoints recommended for production (configure separately using Azure Private Link)
 - ✅ **Compliance**: SOC, ISO, GDPR ready
+- ✅ **Access Control**: Support for Azure AD authentication and RBAC
+
+> **Note**: While this module provisions the Redis Enterprise cluster, private endpoints should be configured separately using Azure Private Link resources for enhanced network security. This is the recommended approach for production deployments.
 
 ## 🌍 Multi-Region Support
 

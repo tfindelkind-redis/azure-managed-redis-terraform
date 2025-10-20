@@ -146,11 +146,12 @@ sku = "ComputeOptimized_X10"   # Compute-intensive workloads
 ### **Security & Networking**  
 ```hcl
 # TLS encryption (always enabled for Azure Managed Redis)
-minimum_tls_version = "1.2"    # Recommended
+minimum_tls_version = "1.2"    # Recommended minimum
 client_protocol = "Encrypted"  # Encrypted (default) or Plaintext
 
-# Note: Azure Managed Redis uses public endpoints with TLS encryption
-# Private endpoints and VNet integration are not currently supported
+# Note: This module provisions the Redis Enterprise cluster
+# For production deployments, configure Azure Private Link separately for enhanced security
+# Private endpoints are recommended for production workloads to restrict network access
 # Access control is managed through Redis AUTH and Azure RBAC
 ```
 
@@ -158,7 +159,12 @@ client_protocol = "Encrypted"  # Encrypted (default) or Plaintext
 ```hcl 
 # Multi-zone deployment
 high_availability = true
-zones = ["1", "2", "3"]    # Deploy across availability zones
+
+# Note: Zone redundancy behavior depends on SKU
+# - Higher-tier SKUs (e.g., Balanced_B3+) have built-in zone redundancy
+#   and don't require (or allow) explicit zones parameter
+# - Lower-tier SKUs can optionally specify zones for custom deployment
+zones = ["1", "2", "3"]    # Only for SKUs that support explicit zone configuration
 
 # Clustering for horizontal scale
 clustering_policy = "EnterpriseCluster"  # Redis Enterprise clustering (default)
@@ -168,9 +174,12 @@ clustering_policy = "OSSCluster"         # Open source Redis clustering
 ### **Data Management**
 ```hcl
 # Eviction policies when memory limit reached
-eviction_policy = "NoEviction"      # Reject writes (default)
-eviction_policy = "AllKeysLRU"      # Remove least recently used keys
+eviction_policy = "NoEviction"      # Reject writes (default, required for RediSearch)
+eviction_policy = "AllKeysLRU"      # Remove least recently used keys (cache scenarios)
 eviction_policy = "VolatileTTL"     # Remove keys with shortest TTL
+
+# Important: RediSearch module requires eviction_policy = "NoEviction"
+# For cache use cases without RediSearch, AllKeysLRU is commonly used
 ```
 
 ### **Redis Enterprise Modules**
