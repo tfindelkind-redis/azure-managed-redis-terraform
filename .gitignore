@@ -4,6 +4,7 @@
 *.tfstate.backup
 *.tfplan
 *.tfplan.*
+tfplan
 *.out
 plan.out
 crash.log
