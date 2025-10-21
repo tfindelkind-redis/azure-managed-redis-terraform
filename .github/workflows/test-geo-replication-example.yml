@@ -78,18 +78,20 @@ jobs:
       run: |
         cd examples/geo-replication
         
-        # Get primary connection string
-        PRIMARY_CONNECTION=$(terraform output -raw primary_connection_string)
+        # Get primary connection details
+        PRIMARY_HOSTNAME=$(terraform output -raw primary_hostname)
+        PRIMARY_KEY=$(terraform state show 'module.primary_redis.data.azapi_resource_action.database_keys[0]' | grep 'primaryKey' | sed -n 's/.*primaryKey[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p')
+        PORT=10000
         
         # Install redis-cli for testing
         sudo apt-get update && sudo apt-get install -y redis-tools
         
         # Test primary region
         echo "Testing primary region Redis connectivity..."
-        redis-cli -u "$PRIMARY_CONNECTION" ping
+        redis-cli -h "$PRIMARY_HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning ping
         
         # Set test data in primary
-        redis-cli -u "$PRIMARY_CONNECTION" JSON.SET primary:test $ '{
+        redis-cli -h "$PRIMARY_HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning JSON.SET primary:test $ '{
           "region": "primary",
           "location": "eastus",
           "test_data": "geo-replication-primary-test",
@@ -97,9 +99,9 @@ jobs:
         }'
         
         # Verify primary data
-        PRIMARY_RESULT=$(redis-cli -u "$PRIMARY_CONNECTION" JSON.GET primary:test $.region)
+        PRIMARY_RESULT=$(redis-cli -h "$PRIMARY_HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning JSON.GET primary:test $.region)
         
-        if [ "$PRIMARY_RESULT" = '"primary"' ]; then
+        if [[ "$PRIMARY_RESULT" == *"primary"* ]]; then
           echo "✅ Primary region Redis test successful"
         else
           echo "❌ Primary region Redis test failed"
@@ -110,15 +112,17 @@ jobs:
       run: |
         cd examples/geo-replication
         
-        # Get secondary connection string
-        SECONDARY_CONNECTION=$(terraform output -raw secondary_connection_string)
+        # Get secondary connection details
+        SECONDARY_HOSTNAME=$(terraform output -raw secondary_hostname)
+        SECONDARY_KEY=$(terraform state show 'module.secondary_redis.data.azapi_resource_action.database_keys[0]' | grep 'primaryKey' | sed -n 's/.*primaryKey[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p')
+        PORT=10000
         
         # Test secondary region
         echo "Testing secondary region Redis connectivity..."
-        redis-cli -u "$SECONDARY_CONNECTION" ping
+        redis-cli -h "$SECONDARY_HOSTNAME" -p "$PORT" --tls -a "$SECONDARY_KEY" --no-auth-warning ping
         
         # Set test data in secondary
-        redis-cli -u "$SECONDARY_CONNECTION" JSON.SET secondary:test $ '{
+        redis-cli -h "$SECONDARY_HOSTNAME" -p "$PORT" --tls -a "$SECONDARY_KEY" --no-auth-warning JSON.SET secondary:test $ '{
           "region": "secondary",
           "location": "westus2",
           "test_data": "geo-replication-secondary-test",
@@ -126,9 +130,9 @@ jobs:
         }'
         
         # Verify secondary data
-        SECONDARY_RESULT=$(redis-cli -u "$SECONDARY_CONNECTION" JSON.GET secondary:test $.region)
+        SECONDARY_RESULT=$(redis-cli -h "$SECONDARY_HOSTNAME" -p "$PORT" --tls -a "$SECONDARY_KEY" --no-auth-warning JSON.GET secondary:test $.region)
         
-        if [ "$SECONDARY_RESULT" = '"secondary"' ]; then
+        if [[ "$SECONDARY_RESULT" == *"secondary"* ]]; then
           echo "✅ Secondary region Redis test successful"
         else
           echo "❌ Secondary region Redis test failed"
@@ -139,20 +143,24 @@ jobs:
       run: |
         cd examples/geo-replication
         
-        PRIMARY_CONNECTION=$(terraform output -raw primary_connection_string)
-        SECONDARY_CONNECTION=$(terraform output -raw secondary_connection_string)
+        # Get connection details for both regions
+        PRIMARY_HOSTNAME=$(terraform output -raw primary_hostname)
+        PRIMARY_KEY=$(terraform state show 'module.primary_redis.data.azapi_resource_action.database_keys[0]' | grep 'primaryKey' | sed -n 's/.*primaryKey[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p')
+        SECONDARY_HOSTNAME=$(terraform output -raw secondary_hostname)
+        SECONDARY_KEY=$(terraform state show 'module.secondary_redis.data.azapi_resource_action.database_keys[0]' | grep 'primaryKey' | sed -n 's/.*primaryKey[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p')
+        PORT=10000
         
         # Test RediSearch in primary region
         echo "Testing RediSearch in primary region..."
-        redis-cli -u "$PRIMARY_CONNECTION" FT.CREATE idx:products ON JSON PREFIX 1 product: SCHEMA $.name AS name TEXT $.category AS category TAG
-        redis-cli -u "$PRIMARY_CONNECTION" JSON.SET product:1 $ '{"name":"Laptop","category":"Electronics","region":"primary"}'
-        PRIMARY_SEARCH=$(redis-cli -u "$PRIMARY_CONNECTION" FT.SEARCH idx:products "Laptop")
+        redis-cli -h "$PRIMARY_HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning FT.CREATE idx:products ON JSON PREFIX 1 product: SCHEMA $.name AS name TEXT $.category AS category TAG
+        redis-cli -h "$PRIMARY_HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning JSON.SET product:1 $ '{"name":"Laptop","category":"Electronics","region":"primary"}'
+        PRIMARY_SEARCH=$(redis-cli -h "$PRIMARY_HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning FT.SEARCH idx:products "Laptop")
         
         # Test RediSearch in secondary region
         echo "Testing RediSearch in secondary region..."
-        redis-cli -u "$SECONDARY_CONNECTION" FT.CREATE idx:users ON JSON PREFIX 1 user: SCHEMA $.name AS name TEXT $.city AS city TAG
-        redis-cli -u "$SECONDARY_CONNECTION" JSON.SET user:1 $ '{"name":"Alice","city":"Seattle","region":"secondary"}'
-        SECONDARY_SEARCH=$(redis-cli -u "$SECONDARY_CONNECTION" FT.SEARCH idx:users "Alice")
+        redis-cli -h "$SECONDARY_HOSTNAME" -p "$PORT" --tls -a "$SECONDARY_KEY" --no-auth-warning FT.CREATE idx:users ON JSON PREFIX 1 user: SCHEMA $.name AS name TEXT $.city AS city TAG
+        redis-cli -h "$SECONDARY_HOSTNAME" -p "$PORT" --tls -a "$SECONDARY_KEY" --no-auth-warning JSON.SET user:1 $ '{"name":"Alice","city":"Seattle","region":"secondary"}'
+        SECONDARY_SEARCH=$(redis-cli -h "$SECONDARY_HOSTNAME" -p "$PORT" --tls -a "$SECONDARY_KEY" --no-auth-warning FT.SEARCH idx:users "Alice")
         
         if [[ "$PRIMARY_SEARCH" == *"Laptop"* ]] && [[ "$SECONDARY_SEARCH" == *"Alice"* ]]; then
           echo "✅ Geo-replication search capabilities test successful"

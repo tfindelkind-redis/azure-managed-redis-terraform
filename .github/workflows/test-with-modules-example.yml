@@ -78,38 +78,40 @@ jobs:
       run: |
         cd examples/with-modules
         
-        # Get connection string
-        CONNECTION_STRING=$(terraform output -raw connection_string)
+        # Get connection details
+        HOSTNAME=$(terraform output -raw hostname)
+        PRIMARY_KEY=$(terraform state show 'module.redis_enterprise.data.azapi_resource_action.database_keys[0]' | grep 'primaryKey' | sed -n 's/.*primaryKey[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p')
+        PORT=10000
         
         # Install redis-cli for testing
         sudo apt-get update && sudo apt-get install -y redis-tools
         
         # Test basic Redis operations
         echo "Testing Redis connectivity..."
-        redis-cli -u "$CONNECTION_STRING" ping
+        redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning ping
         
         # Test RedisJSON module
         echo "Testing RedisJSON module..."
-        redis-cli -u "$CONNECTION_STRING" JSON.SET user:1 $ '{"name":"John","age":30,"city":"New York"}'
-        JSON_RESULT=$(redis-cli -u "$CONNECTION_STRING" JSON.GET user:1 $.name)
+        redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning JSON.SET user:1 $ '{"name":"John","age":30,"city":"New York"}'
+        JSON_RESULT=$(redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning JSON.GET user:1 $.name)
         
         # Test RediSearch module
         echo "Testing RediSearch module..."
-        redis-cli -u "$CONNECTION_STRING" FT.CREATE idx:users ON JSON PREFIX 1 user: SCHEMA $.name AS name TEXT $.age AS age NUMERIC
-        redis-cli -u "$CONNECTION_STRING" FT.SEARCH idx:users "John"
+        redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning FT.CREATE idx:users ON JSON PREFIX 1 user: SCHEMA $.name AS name TEXT $.age AS age NUMERIC
+        redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning FT.SEARCH idx:users "John"
         
         # Test RedisBloom module
         echo "Testing RedisBloom module..."
-        redis-cli -u "$CONNECTION_STRING" BF.ADD users_bloom "user:1"
-        BLOOM_RESULT=$(redis-cli -u "$CONNECTION_STRING" BF.EXISTS users_bloom "user:1")
+        redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning BF.ADD users_bloom "user:1"
+        BLOOM_RESULT=$(redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning BF.EXISTS users_bloom "user:1")
         
         # Test RedisTimeSeries module
         echo "Testing RedisTimeSeries module..."
-        redis-cli -u "$CONNECTION_STRING" TS.CREATE temperature:room1 LABELS room 1 sensor temperature
-        redis-cli -u "$CONNECTION_STRING" TS.ADD temperature:room1 "*" 22.5
+        redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning TS.CREATE temperature:room1 LABELS room 1 sensor temperature
+        redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning TS.ADD temperature:room1 "*" 22.5
         
         # Validate results
-        if [ "$JSON_RESULT" = '"John"' ] && [ "$BLOOM_RESULT" = "1" ]; then
+        if [[ "$JSON_RESULT" == *"John"* ]] && [ "$BLOOM_RESULT" = "1" ]; then
           echo "✅ All Redis modules test successful"
         else
           echo "❌ Redis modules test failed"

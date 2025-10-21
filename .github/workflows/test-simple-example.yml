@@ -78,19 +78,21 @@ jobs:
       run: |
         cd examples/simple
         
-        # Get connection string
-        CONNECTION_STRING=$(terraform output -raw connection_string)
+        # Get connection details
+        HOSTNAME=$(terraform output -raw hostname)
+        PRIMARY_KEY=$(terraform state show 'module.redis_enterprise.data.azapi_resource_action.database_keys[0]' | grep 'primaryKey' | sed -n 's/.*primaryKey[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p')
+        PORT=10000
         
         # Install redis-cli for testing
         sudo apt-get update && sudo apt-get install -y redis-tools
         
         # Test basic Redis operations
         echo "Testing Redis connectivity..."
-        redis-cli -u "$CONNECTION_STRING" ping
+        redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning ping
         
         echo "Testing basic SET/GET operations..."
-        redis-cli -u "$CONNECTION_STRING" SET test "simple-example-test-$(date +%s)"
-        RESULT=$(redis-cli -u "$CONNECTION_STRING" GET test)
+        redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning SET test "simple-example-test-$(date +%s)"
+        RESULT=$(redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning GET test)
         
         if [ -n "$RESULT" ]; then
           echo "✅ Redis connectivity test successful"

@@ -73,10 +73,10 @@ resource "azapi_resource" "secondary_cluster" {
   }
 
   tags = {
-    Environment  = var.environment
-    Region       = "secondary"
-    Role         = "secondary-redis"
-    Criticality  = "high"
+    Environment = var.environment
+    Region      = "secondary"
+    Role        = "secondary-redis"
+    Criticality = "high"
     "managed-by" = "terraform"
   }
 
@@ -103,7 +103,7 @@ resource "azapi_resource" "secondary_database" {
       clientProtocol   = "Encrypted"
       evictionPolicy   = "NoEviction"
       clusteringPolicy = "EnterpriseCluster"
-
+      
       modules = [
         {
           name = "RedisJSON"
@@ -116,7 +116,7 @@ resource "azapi_resource" "secondary_database" {
       # Required properties for API version 2025-05-01-preview
       deferUpgrade             = "NotDeferred"
       accessKeysAuthentication = "Enabled"
-
+      
       persistence = {
         aofEnabled = false
         rdbEnabled = false

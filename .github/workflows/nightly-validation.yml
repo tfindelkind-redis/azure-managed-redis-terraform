@@ -158,21 +158,23 @@ jobs:
         terraform plan -input=false
         terraform apply -auto-approve -input=false
         
-        # Test connectivity
-        CONNECTION_STRING=$(terraform output -raw connection_string)
+        # Get connection details
+        HOSTNAME=$(terraform output -raw hostname)
+        PRIMARY_KEY=$(terraform state show 'module.redis_enterprise.data.azapi_resource_action.database_keys[0]' | grep 'primaryKey' | sed -n 's/.*primaryKey[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p')
+        PORT=10000
         
         # Install redis-cli for testing
         sudo apt-get update && sudo apt-get install -y redis-tools
         
         # Test basic Redis operations
         echo "Testing Redis connectivity..."
-        redis-cli -u "$CONNECTION_STRING" ping
+        redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning ping
         
         echo "Testing RedisJSON module..."
-        redis-cli -u "$CONNECTION_STRING" JSON.SET test $ '{"message":"nightly-test-success"}'
-        RESULT=$(redis-cli -u "$CONNECTION_STRING" JSON.GET test $.message)
+        redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning JSON.SET test $ '{"message":"nightly-test-success"}'
+        RESULT=$(redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning JSON.GET test $.message)
         
-        if [ "$RESULT" = '"nightly-test-success"' ]; then
+        if [[ "$RESULT" == *"nightly-test-success"* ]]; then
           echo "✅ Redis deployment test successful"
         else
           echo "❌ Redis deployment test failed"

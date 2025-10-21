@@ -78,24 +78,26 @@ jobs:
       run: |
         cd examples/high-availability
         
-        # Get connection string
-        CONNECTION_STRING=$(terraform output -raw connection_string)
+        # Get connection details
+        HOSTNAME=$(terraform output -raw hostname)
+        PRIMARY_KEY=$(terraform state show 'module.redis_enterprise.data.azapi_resource_action.database_keys[0]' | grep 'primaryKey' | sed -n 's/.*primaryKey[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p')
+        PORT=10000
         
         # Install redis-cli for testing
         sudo apt-get update && sudo apt-get install -y redis-tools
         
         # Test basic Redis operations
         echo "Testing Redis connectivity..."
-        redis-cli -u "$CONNECTION_STRING" ping
+        redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning ping
         
         # Test high-availability specific features
         echo "Testing high-availability configuration..."
         
         # Set some test data
-        redis-cli -u "$CONNECTION_STRING" SET ha_test_key "high-availability-test-$(date +%s)"
+        redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning SET ha_test_key "high-availability-test-$(date +%s)"
         
         # Test RedisJSON with complex data
-        redis-cli -u "$CONNECTION_STRING" JSON.SET ha:config $ '{
+        redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning JSON.SET ha:config $ '{
           "cluster": {
             "high_availability": true,
             "zones": ["1", "2", "3"],
@@ -105,10 +107,10 @@ jobs:
         }'
         
         # Verify data persistence
-        HA_RESULT=$(redis-cli -u "$CONNECTION_STRING" GET ha_test_key)
-        JSON_RESULT=$(redis-cli -u "$CONNECTION_STRING" JSON.GET ha:config $.cluster.high_availability)
+        HA_RESULT=$(redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning GET ha_test_key)
+        JSON_RESULT=$(redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning JSON.GET ha:config $.cluster.high_availability)
         
-        if [[ "$HA_RESULT" == *"high-availability-test"* ]] && [ "$JSON_RESULT" = "true" ]; then
+        if [[ "$HA_RESULT" == *"high-availability-test"* ]] && [[ "$JSON_RESULT" == *"true"* ]]; then
           echo "✅ High-availability Redis test successful"
         else
           echo "❌ High-availability Redis test failed"
@@ -121,18 +123,21 @@ jobs:
       run: |
         cd examples/high-availability
         
-        CONNECTION_STRING=$(terraform output -raw connection_string)
+        # Get connection details
+        HOSTNAME=$(terraform output -raw hostname)
+        PRIMARY_KEY=$(terraform state show 'module.redis_enterprise.data.azapi_resource_action.database_keys[0]' | grep 'primaryKey' | sed -n 's/.*primaryKey[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p')
+        PORT=10000
         
         # Test that we can perform operations indicating zone redundancy is working
         echo "Testing zone redundancy capabilities..."
         
         # Create multiple keys to test distribution
         for i in {1..10}; do
-          redis-cli -u "$CONNECTION_STRING" SET "zone_test_key_$i" "zone_data_$i"
+          redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning SET "zone_test_key_$i" "zone_data_$i"
         done
         
         # Verify all keys are accessible
-        KEYS_COUNT=$(redis-cli -u "$CONNECTION_STRING" KEYS "zone_test_key_*" | wc -l)
+        KEYS_COUNT=$(redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning KEYS "zone_test_key_*" | wc -l)
         
         if [ "$KEYS_COUNT" -eq 10 ]; then
           echo "✅ Zone redundancy test successful - all keys accessible"
