@@ -1,4 +1,4 @@
-# Azure Managed Redis Terraform Module - Unofficial
+# Azure Managed Redis Terraform Module - Unoffical 
 
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/tfindelkind-redis/azure-managed-redis-terraform)
 [![CI](https://github.com/tfindelkind-redis/azure-managed-redis-terraform/actions/workflows/ci.yml/badge.svg)](https://github.com/tfindelkind-redis/azure-managed-redis-terraform/actions/workflows/ci.yml)
@@ -38,7 +38,17 @@ Azure Managed Redis consists of:
 3. **Modules** - Optional Redis Enterprise modules (JSON, Search, etc.)
 4. **Security** - TLS encryption and access key management
 
-## 📦 Quick Start
+## �️ Safety Features
+
+> **🔒 Resource Group Protection**: All resource groups are protected from accidental deletion using Terraform's `prevent_destroy` lifecycle rule. See [RESOURCE_GROUP_PROTECTION.md](RESOURCE_GROUP_PROTECTION.md) for details.
+
+**Key Safety Measures**:
+- ✅ Resource groups cannot be deleted via `terraform destroy`
+- ✅ Prevents accidental infrastructure removal
+- ✅ Protects critical Azure resources (RBAC, logs, monitoring)
+- ✅ Safe for CI/CD - uses existing resource groups
+
+## �📦 Quick Start
 
 ### ⚡ Instant Setup with GitHub Codespaces (Recommended)
 
@@ -196,6 +206,10 @@ provider "azapi" {}
 resource "azurerm_resource_group" "demo" {
   name     = "rg-azure-managed-redis-terraform"
   location = "northeurope"
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Deploy Redis Enterprise

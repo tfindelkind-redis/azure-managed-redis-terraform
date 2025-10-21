@@ -10,6 +10,10 @@ resource "azurerm_resource_group" "main" {
     Owner       = var.owner
     Example     = "simple-redis"
   }
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Get existing resource group (conditional)

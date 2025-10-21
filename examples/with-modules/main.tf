@@ -9,6 +9,10 @@ resource "azurerm_resource_group" "main" {
     Environment = var.environment
     Example     = "redis-with-modules"
   }
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Get existing resource group (conditional)

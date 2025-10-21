@@ -11,6 +11,10 @@ resource "azurerm_resource_group" "main" {
     Example       = "redis-high-availability"
     CriticalLevel = "tier1"
   }
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Get existing resource group (conditional)
