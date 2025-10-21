@@ -1,5 +1,3 @@
-# Azure Managed Redis Terraform Module -## 🛡️ Safety Features
-
 # Azure Managed Redis Terraform Module - Unofficial
 
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/tfindelkind-redis/azure-managed-redis-terraform)
