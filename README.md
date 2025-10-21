@@ -1,5 +1,47 @@
 # Azure Managed Redis Terraform Module -## 🛡️ Safety Features
 
+# Azure Managed Redis Terraform Module - Unofficial
+
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/tfindelkind-redis/azure-managed-redis-terraform)
+[![CI](https://github.com/tfindelkind-redis/azure-managed-redis-terraform/actions/workflows/ci.yml/badge.svg)](https://github.com/tfindelkind-redis/azure-managed-redis-terraform/actions/workflows/ci.yml)
+[![Nightly Validation](https://github.com/tfindelkind-redis/azure-managed-redis-terraform/actions/workflows/nightly-validation.yml/badge.svg)](https://github.com/tfindelkind-redis/azure-managed-redis-terraform/actions/workflows/nightly-validation.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+## 📚 Examples
+
+| 📁 Example                                         | 📝 Description             | 🎯 Use Case                |
+|----------------------------------------------------|----------------------------|----------------------------|
+| [Simple](examples/simple/)                         | Basic deployment           | Development & testing      |
+| [With Modules](examples/with-modules/)             | Redis modules showcase     | Feature exploration        |
+| [High Availability](examples/high-availability/)   | HA configuration           | High-availability apps     |
+| [Geo-Replication](examples/geo-replication/)       | Global deployment          | Worldwide applications     |
+
+> **Deploy Azure Managed Redis with Terraform — AzAPI Today, Native Tomorrow**
+
+A Terraform module for deploying Azure Managed Redis (Redis Enterprise) with seamless migration path from AzAPI to native azurerm provider.
+
+## ⭐ Features
+
+- **Azure Managed Redis**: Fully managed Redis Enterprise cluster with high performance
+- **Stable API**: Uses Azure Redis Enterprise API version `2024-09-01-preview` (proven stable)
+- **Extended SKU Options**: Support for 40+ SKUs including Balanced, Flash-Optimized, Memory/Compute variants
+- **Future-Proof**: Built with AzAPI provider, ready for azurerm migration
+- **Redis Modules**: Support for RedisJSON, RediSearch, RedisBloom, RedisTimeSeries
+- **Configurable**: High availability, security, and monitoring options
+- **CI/CD Ready**: GitHub Actions workflows for automated validation and deployment
+- **Geo-Replication**: Support for active geo-replication across regions
+
+## 🏗️ Architecture
+
+Azure Managed Redis consists of:
+
+1. **Redis Enterprise Cluster** - The main compute and storage layer
+2. **Database(s)** - Individual Redis databases within the cluster  
+3. **Modules** - Optional Redis Enterprise modules (JSON, Search, etc.)
+4. **Security** - TLS encryption and access key management
+
+## 🛡️ Safety Features
+
 > **🔒 Resource Group Protection**: All resource groups are protected from accidental deletion using Terraform's `prevent_destroy` lifecycle rule.
 
 **Key Safety Measures**:
@@ -7,6 +49,8 @@
 - ✅ Prevents accidental infrastructure removal
 - ✅ Protects critical Azure resources (RBAC, logs, monitoring)
 - ✅ Safe for CI/CD - uses existing resource groups
+
+## 📦 Quick Start
 
 ## 📦 Quick Start
 
