@@ -142,7 +142,7 @@ jobs:
             
             name                = "my-redis-cluster"
             resource_group_name = "rg-azure-managed-redis-terraform"
-            location            = "East US"
+            location            = "North Europe"
           }
           ```
           

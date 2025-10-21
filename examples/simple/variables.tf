@@ -7,7 +7,7 @@ variable "resource_group_name" {
 variable "location" {
   description = "Azure region for the Redis Enterprise cluster"
   type        = string
-  default     = "eastus"
+  default     = "northeurope"
 }
 
 variable "redis_name" {

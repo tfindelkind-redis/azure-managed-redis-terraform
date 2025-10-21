@@ -147,7 +147,7 @@ jobs:
         # Create terraform.tfvars
         cat > terraform.tfvars << EOF
         resource_group_name = "${RG_NAME}"
-        location = "East US"
+        location = "North Europe"
         redis_name = "${REDIS_NAME}"
         environment = "testing"
         create_resource_group = false

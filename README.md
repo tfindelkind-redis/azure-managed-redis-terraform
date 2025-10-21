@@ -105,7 +105,7 @@ code terraform.tfvars
 Example `terraform.tfvars`:
 ```hcl
 resource_group_name = "rg-azure-managed-redis-terraform"
-location           = "eastus"
+location           = "northeurope"
 redis_name         = "redis-demo-$(date +%s)"
 environment        = "demo"
 ```
@@ -156,7 +156,7 @@ Apply complete! Resources: 3 added, 0 changed, 0 destroyed.
 ```
 @vscode ➜ /workspaces/azure-managed-redis-terraform/examples/simple $ ../../scripts/test-connection.sh
 [INFO] Getting connection details from Terraform...
-[INFO] Testing connection to redis-demo-1698765432.eastus.redisenterprise.cache.azure.net:10000
+[INFO] Testing connection to redis-demo-1698765432.northeurope.redisenterprise.cache.azure.net:10000
 [INFO] Testing Redis PING...
 [SUCCESS] PING successful
 [INFO] Testing SET/GET operations...
@@ -165,7 +165,7 @@ Apply complete! Resources: 3 added, 0 changed, 0 destroyed.
 [INFO] Testing RedisJSON module...
 [SUCCESS] RedisJSON working
 [SUCCESS] All tests passed! Redis is working correctly.
-[INFO] Connection string: rediss://:****@redis-demo-1698765432.eastus.redisenterprise.cache.azure.net:10000
+[INFO] Connection string: rediss://:****@redis-demo-1698765432.northeurope.redisenterprise.cache.azure.net:10000
 ```
 
 6. **Connect from your application**:
@@ -195,7 +195,7 @@ provider "azapi" {}
 # Create resource group
 resource "azurerm_resource_group" "demo" {
   name     = "rg-azure-managed-redis-terraform"
-  location = "eastus"
+  location = "northeurope"
 }
 
 # Deploy Redis Enterprise
@@ -257,7 +257,7 @@ Apply complete! Resources: 3 added, 0 changed, 0 destroyed.
 
 Outputs:
 redis_connection_info = {
-  "hostname" = "my-redis-cluster.eastus.redisenterprise.cache.azure.net"
+  "hostname" = "my-redis-cluster.northeurope.redisenterprise.cache.azure.net"
   "port" = 10000
 }
 redis_connection_string = <sensitive>
@@ -355,7 +355,7 @@ Deploy with active geo-replication across Azure regions for global applications:
 module "redis_primary" {
   source = "./modules/managed-redis"
   name   = "redis-primary"
-  location = "eastus"
+  location = "northeurope"
   # ... other configuration
 }
 
@@ -420,7 +420,7 @@ jobs:
         # Create terraform.tfvars
         cat > terraform.tfvars << EOF
         resource_group_name = "rg-azure-managed-redis-terraform"
-        location = "eastus"
+        location = "northeurope"
         redis_name = "redis-demo-$(date +%Y%m%d%H%M%S)"
         environment = "production"
         create_resource_group = false

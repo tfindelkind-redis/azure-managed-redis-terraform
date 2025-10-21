@@ -58,7 +58,7 @@ jobs:
         # Create terraform.tfvars
         cat > terraform.tfvars << EOF
         resource_group_name = "rg-azure-managed-redis-terraform"
-        location = "eastus"
+        location = "northeurope"
         redis_name = "${REDIS_NAME}"
         environment = "testing"
         create_resource_group = false
@@ -110,7 +110,7 @@ jobs:
         echo "### Deployment Information" >> $GITHUB_STEP_SUMMARY
         echo "- Redis Name: ${{ steps.deploy.outputs.redis_name }}" >> $GITHUB_STEP_SUMMARY
         echo "- Resource Group: rg-azure-managed-redis-terraform" >> $GITHUB_STEP_SUMMARY
-        echo "- Location: East US" >> $GITHUB_STEP_SUMMARY
+        echo "- Location: North Europe" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### Test Status" >> $GITHUB_STEP_SUMMARY
         echo "✅ Deployment: Successful" >> $GITHUB_STEP_SUMMARY

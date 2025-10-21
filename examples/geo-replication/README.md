@@ -7,7 +7,7 @@ This example demonstrates deploying Azure Managed Redis with active geo-replicat
 ```
 ┌─────────────────┐       ┌─────────────────┐
 │   Primary       │◄─────►│   Secondary     │
-│   East US       │  Geo  │   West Europe   │
+│   North Europe  │  Geo  │   West Europe   │
 │                 │  Rep  │                 │
 │ ┌─────────────┐ │       │ ┌─────────────┐ │
 │ │    Redis    │ │       │ │    Redis    │ │
@@ -52,7 +52,7 @@ This example demonstrates deploying Azure Managed Redis with active geo-replicat
 terraform init
 terraform plan \
   -var="project_name=myapp" \
-  -var="primary_location=East US" \
+  -var="primary_location=North Europe" \
   -var="secondary_location=West Europe"
 terraform apply
 ```

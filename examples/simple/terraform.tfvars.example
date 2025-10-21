@@ -3,7 +3,7 @@
 
 # Required variables
 resource_group_name = "rg-azure-managed-redis-terraform"
-location           = "East US"
+location           = "North Europe"
 redis_name         = "redis-simple-demo"
 
 # Optional variables

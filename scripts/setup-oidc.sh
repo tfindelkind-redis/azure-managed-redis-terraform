@@ -152,7 +152,7 @@ az ad sp create --id $APP_ID --query '{appId: appId, displayName: displayName}' 
 
 # Step 3: Create resource group (if it doesn't exist)
 echo "3️⃣ Ensuring resource group exists..."
-az group create --name $RESOURCE_GROUP --location "East US" --output table || echo "   ℹ️ Resource group already exists"
+az group create --name $RESOURCE_GROUP --location "North Europe" --output table || echo "   ℹ️ Resource group already exists"
 
 # Step 4: Assign Contributor role to the resource group
 echo "4️⃣ Assigning Contributor role to resource group..."

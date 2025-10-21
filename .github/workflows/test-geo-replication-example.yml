@@ -58,7 +58,7 @@ jobs:
         # Create terraform.tfvars
         cat > terraform.tfvars << EOF
         project_name = "${PROJECT_NAME}"
-        primary_location = "eastus"
+        primary_location = "northeurope"
         secondary_location = "westus2"
         environment = "testing"
         redis_sku = "Balanced_B1"
@@ -93,7 +93,7 @@ jobs:
         # Set test data in primary
         redis-cli -h "$PRIMARY_HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning JSON.SET primary:test $ '{
           "region": "primary",
-          "location": "eastus",
+          "location": "northeurope",
           "test_data": "geo-replication-primary-test",
           "timestamp": "'$(date -Iseconds)'"
         }'
@@ -177,7 +177,7 @@ jobs:
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### Deployment Information" >> $GITHUB_STEP_SUMMARY
         echo "- Project Name: ${{ steps.deploy.outputs.project_name }}" >> $GITHUB_STEP_SUMMARY
-        echo "- Primary Region: East US" >> $GITHUB_STEP_SUMMARY
+        echo "- Primary Region: North Europe" >> $GITHUB_STEP_SUMMARY
         echo "- Secondary Region: West US 2" >> $GITHUB_STEP_SUMMARY
         echo "- SKU: Balanced_B1" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY

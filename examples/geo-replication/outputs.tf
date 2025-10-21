@@ -1,11 +1,11 @@
 output "primary_resource_group" {
   description = "Primary resource group name"
-  value       = azurerm_resource_group.primary.name
+  value       = local.primary_rg_name
 }
 
 output "secondary_resource_group" {
   description = "Secondary resource group name"
-  value       = azurerm_resource_group.secondary.name
+  value       = local.secondary_rg_name
 }
 
 output "primary_cluster_id" {

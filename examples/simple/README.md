@@ -16,7 +16,7 @@ This example demonstrates the minimal configuration required to deploy Azure Man
 
 ```hcl
 resource_group_name = "rg-azure-managed-redis-terraform"
-location           = "East US"
+location           = "North Europe"
 redis_name         = "redis-simple-demo"
 ```
 

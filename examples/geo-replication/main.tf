@@ -1,6 +1,7 @@
 # Primary region resource group
 resource "azurerm_resource_group" "primary" {
-  name     = "rg-azure-managed-redis-terraform"
+  count    = var.create_resource_groups ? 1 : 0
+  name     = var.primary_resource_group_name
   location = var.primary_location
 
   tags = {
@@ -10,9 +11,16 @@ resource "azurerm_resource_group" "primary" {
   }
 }
 
+# Use existing primary resource group
+data "azurerm_resource_group" "primary_existing" {
+  count = var.create_resource_groups ? 0 : 1
+  name  = var.primary_resource_group_name
+}
+
 # Secondary region resource group
 resource "azurerm_resource_group" "secondary" {
-  name     = "rg-azure-managed-redis-terraform2"
+  count    = var.create_resource_groups ? 1 : 0
+  name     = var.secondary_resource_group_name
   location = var.secondary_location
 
   tags = {
@@ -22,13 +30,27 @@ resource "azurerm_resource_group" "secondary" {
   }
 }
 
+# Use existing secondary resource group
+data "azurerm_resource_group" "secondary_existing" {
+  count = var.create_resource_groups ? 0 : 1
+  name  = var.secondary_resource_group_name
+}
+
+# Local values for resource group references
+locals {
+  primary_rg_name   = var.create_resource_groups ? azurerm_resource_group.primary[0].name : data.azurerm_resource_group.primary_existing[0].name
+  primary_rg_id     = var.create_resource_groups ? azurerm_resource_group.primary[0].id : data.azurerm_resource_group.primary_existing[0].id
+  secondary_rg_name = var.create_resource_groups ? azurerm_resource_group.secondary[0].name : data.azurerm_resource_group.secondary_existing[0].name
+  secondary_rg_id   = var.create_resource_groups ? azurerm_resource_group.secondary[0].id : data.azurerm_resource_group.secondary_existing[0].id
+}
+
 # Primary Redis Enterprise cluster
 module "redis_primary" {
   source = "../../modules/managed-redis"
 
   name                = "${var.project_name}-primary"
-  resource_group_name = azurerm_resource_group.primary.name
-  location            = azurerm_resource_group.primary.location
+  resource_group_name = local.primary_rg_name
+  location            = var.primary_location
 
   sku = var.redis_sku
 
@@ -56,8 +78,8 @@ module "redis_primary" {
 resource "azapi_resource" "secondary_cluster" {
   type      = "Microsoft.Cache/redisEnterprise@2025-05-01-preview"
   name      = "${var.project_name}-secondary"
-  location  = azurerm_resource_group.secondary.location
-  parent_id = azurerm_resource_group.secondary.id
+  location  = var.secondary_location
+  parent_id = local.secondary_rg_id
 
   body = {
     sku = {

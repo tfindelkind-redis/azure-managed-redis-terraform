@@ -43,7 +43,7 @@ module "redis_test" {
 
   name                = "redis-api-test"
   resource_group_name = "test-rg"
-  location            = "eastus"
+  location            = "northeurope"
   sku                 = var.test_sku
   modules             = []
   high_availability   = false

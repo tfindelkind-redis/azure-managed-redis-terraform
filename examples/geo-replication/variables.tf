@@ -1,13 +1,31 @@
 variable "primary_location" {
   description = "Primary Azure region"
   type        = string
-  default     = "eastus"
+  default     = "northeurope"
 }
 
 variable "secondary_location" {
   description = "Secondary Azure region for geo-replication"
   type        = string
-  default     = "West Europe"
+  default     = "westeurope"
+}
+
+variable "primary_resource_group_name" {
+  description = "Primary region resource group name"
+  type        = string
+  default     = "rg-azure-managed-redis-terraform"
+}
+
+variable "secondary_resource_group_name" {
+  description = "Secondary region resource group name"
+  type        = string
+  default     = "rg-azure-managed-redis-terraform2"
+}
+
+variable "create_resource_groups" {
+  description = "Whether to create new resource groups or use existing ones"
+  type        = bool
+  default     = true
 }
 
 variable "project_name" {
