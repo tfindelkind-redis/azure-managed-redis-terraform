@@ -12,7 +12,7 @@
 | [Simple](examples/simple/)                         | Basic deployment           | Development & testing      |
 | [With Modules](examples/with-modules/)             | Redis modules showcase     | Feature exploration        |
 | [High Availability](examples/high-availability/)   | HA configuration           | High-availability apps     |
-| [Multi-Region](examples/multi-region/)             | Global deployment          | Worldwide applications     |
+| [Geo-Replication](examples/geo-replication/)       | Global deployment          | Worldwide applications     |
 
 > **Deploy Azure Managed Redis with Terraform — AzAPI Today, Native Tomorrow**
 
@@ -265,22 +265,24 @@ redis_connection_string = <sensitive>
 
 5. **Test your Redis deployment**:
 ```bash
-# Get the connection string
-CONNECTION_STRING=$(terraform output -raw redis_connection_string)
+# Get connection details
+HOSTNAME=$(terraform output -raw hostname)
+PORT=$(terraform output -raw port)
+PRIMARY_KEY=$(terraform output -raw primary_key)
 
 # Test basic connectivity (requires redis-cli)
-redis-cli -u "$CONNECTION_STRING" ping
+redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning ping
 # Expected output: PONG
 
 # Test RedisJSON module
-redis-cli -u "$CONNECTION_STRING" JSON.SET user:1 $ '{"name":"John","age":30}'
+redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning JSON.SET user:1 $ '{"name":"John","age":30}'
 # Expected output: OK
 
-redis-cli -u "$CONNECTION_STRING" JSON.GET user:1 $.name  
+redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning JSON.GET user:1 $.name  
 # Expected output: ["John"]
 
 # Test RediSearch module
-redis-cli -u "$CONNECTION_STRING" FT.CREATE users_idx ON JSON PREFIX 1 user: SCHEMA $.name AS name TEXT
+redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning FT.CREATE users_idx ON JSON PREFIX 1 user: SCHEMA $.name AS name TEXT
 # Expected output: OK
 ```
 
@@ -328,8 +330,10 @@ For detailed input/output documentation, see: [Module Documentation](modules/man
 
 - `hostname` - Redis database hostname
 - `port` - Redis database port (10000)
-- `connection_string` - Full Redis connection string (sensitive)
 - `primary_key` / `secondary_key` - Access keys (sensitive)
+- `connection_string` - Full Redis connection string for reference (sensitive)
+
+> **Note**: For connecting to Azure Managed Redis, use explicit parameters (`-h`, `-p`, `--tls`, `-a`) instead of the connection string URL format. See examples above.
 
 ## 🔐 Security Best Practices
 

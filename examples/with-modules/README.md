@@ -73,15 +73,17 @@ terraform apply -var="enable_all_modules=false"
 
 3. Test module functionality:
 ```bash
-# Get connection string
-CONNECTION_STRING=$(terraform output -raw connection_string)
+# Get connection details
+HOSTNAME=$(terraform output -raw hostname)
+PORT=$(terraform output -raw port)
+PRIMARY_KEY=$(terraform output -raw primary_key)
 
 # Test RedisJSON
-redis-cli -u "$CONNECTION_STRING" JSON.SET test $ '{"hello":"world"}'
-redis-cli -u "$CONNECTION_STRING" JSON.GET test
+redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning JSON.SET test $ '{"hello":"world"}'
+redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning JSON.GET test
 
 # Test RediSearch (if enabled)  
-redis-cli -u "$CONNECTION_STRING" FT.CREATE idx ON JSON PREFIX 1 doc: SCHEMA $.title AS title TEXT
+redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning FT.CREATE idx ON JSON PREFIX 1 doc: SCHEMA $.title AS title TEXT
 ```
 
 ## Requirements

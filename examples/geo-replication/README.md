@@ -317,13 +317,20 @@ resource "azurerm_consumption_budget" "redis_budget" {
 # Deploy infrastructure
 terraform apply
 
+# Get connection details for primary region
+PRIMARY_HOSTNAME=$(terraform output -raw primary_hostname)
+PRIMARY_KEY=$(terraform output -raw primary_key)
+PORT=10000
+
 # Test primary region
-terraform output -raw primary_connection_string | \
-  xargs -I {} redis-cli -u {} ping
+redis-cli -h "$PRIMARY_HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning ping
+
+# Get connection details for secondary region
+SECONDARY_HOSTNAME=$(terraform output -raw secondary_hostname)
+SECONDARY_KEY=$(terraform output -raw secondary_key)
 
 # Test secondary region  
-terraform output -raw secondary_connection_string | \
-  xargs -I {} redis-cli -u {} ping
+redis-cli -h "$SECONDARY_HOSTNAME" -p "$PORT" --tls -a "$SECONDARY_KEY" --no-auth-warning ping
 ```
 
 ### 2. Failover Testing
@@ -336,12 +343,13 @@ PRIMARY_HOST=$(terraform output -raw primary_hostname)
 
 ### 3. Performance Testing
 ```bash
-# Test both regions
-for region in primary secondary; do
-    echo "Testing $region region..."
-    CONNECTION_STRING=$(terraform output -raw ${region}_connection_string)
-    redis-benchmark -u "$CONNECTION_STRING" -t set,get -n 10000 -c 50
-done
+# Test primary region
+echo "Testing primary region..."
+redis-benchmark -h "$PRIMARY_HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" -t set,get -n 10000 -c 50
+
+# Test secondary region
+echo "Testing secondary region..."
+redis-benchmark -h "$SECONDARY_HOSTNAME" -p "$PORT" --tls -a "$SECONDARY_KEY" -t set,get -n 10000 -c 50
 ```
 
 ## Security Considerations

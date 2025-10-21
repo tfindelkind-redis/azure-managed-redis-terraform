@@ -74,18 +74,24 @@ terraform apply -var="environment=ha"
 
 2. **Verify High Availability**:
 ```bash
-# Test failover simulation
-redis-cli -u "$(terraform output -raw connection_string)" DEBUG SEGFAULT
+# Get connection details
+HOSTNAME=$(terraform output -raw hostname)
+PORT=$(terraform output -raw port)
+PRIMARY_KEY=$(terraform output -raw primary_key)
 
-# Verify automatic recovery
-sleep 60
-redis-cli -u "$(terraform output -raw connection_string)" ping
+# Test basic connectivity
+redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning ping
+# Expected output: PONG
+
+# Test data operations
+redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning SET test "ha-test"
+redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning GET test
 ```
 
 3. **Performance Testing**:
 ```bash
-# Run performance benchmark
-redis-benchmark -u "$(terraform output -raw connection_string)" \
+# Run performance benchmark with explicit parameters
+redis-benchmark -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" \
   -t set,get -n 100000 -c 50 -d 1024
 ```
 

@@ -32,10 +32,13 @@ terraform apply
 
 ```bash
 # Get connection details
-terraform output -raw connection_string
+HOSTNAME=$(terraform output -raw hostname)
+PORT=$(terraform output -raw port)
+PRIMARY_KEY=$(terraform output -raw primary_key)
 
 # Test with redis-cli (if installed)
-redis-cli -u "$(terraform output -raw connection_string)" ping
+redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning ping
+# Expected output: PONG
 ```
 
 ## Outputs
