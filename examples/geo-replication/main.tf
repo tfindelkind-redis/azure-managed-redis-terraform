@@ -53,32 +53,90 @@ locals {
 }
 
 # Primary Redis Enterprise cluster
-module "redis_primary" {
-  source = "../../modules/managed-redis"
+resource "azapi_resource" "primary_cluster" {
+  type      = "Microsoft.Cache/redisEnterprise@2025-05-01-preview"
+  name      = "${var.project_name}-primary"
+  location  = var.primary_location
+  parent_id = local.primary_rg_id
 
-  name                = "${var.project_name}-primary"
-  resource_group_name = local.primary_rg_name
-  location            = var.primary_location
+  body = {
+    sku = {
+      name = var.redis_sku
+    }
 
-  sku = var.redis_sku
-
-  modules = [
-    "RedisJSON",
-    "RediSearch"
-  ]
-
-  high_availability   = true
-  minimum_tls_version = "1.2"
-  # Note: Balanced_B3 SKU has zone redundancy enabled by default
-  # No need to explicitly specify zones parameter
-
-  use_azapi = true
+    properties = {
+      highAvailability  = "Enabled"
+      minimumTlsVersion = "1.2"
+    }
+  }
 
   tags = {
     Environment = var.environment
     Region      = "primary"
     Role        = "primary-redis"
     Criticality = "high"
+    managed-by  = "terraform"
+  }
+
+  schema_validation_enabled = false
+
+  timeouts {
+    create = "30m"
+    update = "30m"
+    delete = "30m"
+  }
+}
+
+# Primary database with geo-replication configuration
+resource "azapi_resource" "primary_database" {
+  type      = "Microsoft.Cache/redisEnterprise/databases@2025-05-01-preview"
+  name      = "default"
+  parent_id = azapi_resource.primary_cluster.id
+
+  body = {
+    properties = {
+      clientProtocol   = "Encrypted"
+      evictionPolicy   = "NoEviction"
+      clusteringPolicy = "EnterpriseCluster"
+
+      modules = [
+        {
+          name = "RedisJSON"
+        },
+        {
+          name = "RediSearch"
+        }
+      ]
+
+      # Required properties for API version 2025-05-01-preview
+      deferUpgrade             = "NotDeferred"
+      accessKeysAuthentication = "Enabled"
+
+      persistence = {
+        aofEnabled = false
+        rdbEnabled = false
+      }
+
+      # Geo-replication configuration - primary only includes itself initially
+      geoReplication = {
+        groupNickname = var.geo_replication_group_name
+        linkedDatabases = [
+          {
+            id = "${azapi_resource.primary_cluster.id}/databases/default"
+          }
+        ]
+      }
+    }
+  }
+
+  schema_validation_enabled = false
+
+  depends_on = [azapi_resource.primary_cluster]
+
+  timeouts {
+    create = "30m"
+    update = "30m"
+    delete = "30m"
   }
 }
 
@@ -113,7 +171,7 @@ resource "azapi_resource" "secondary_cluster" {
   schema_validation_enabled = false
 
   # Ensure primary is fully created first
-  depends_on = [module.redis_primary]
+  depends_on = [azapi_resource.primary_database]
 
   timeouts {
     create = "30m"
@@ -157,7 +215,10 @@ resource "azapi_resource" "secondary_database" {
         groupNickname = var.geo_replication_group_name
         linkedDatabases = [
           {
-            id = module.redis_primary.database_id
+            id = azapi_resource.primary_database.id
+          },
+          {
+            id = "${azapi_resource.secondary_cluster.id}/databases/default"
           }
         ]
       }
@@ -168,7 +229,7 @@ resource "azapi_resource" "secondary_database" {
 
   # Wait for both clusters and primary database to be ready
   depends_on = [
-    module.redis_primary,
+    azapi_resource.primary_database,
     azapi_resource.secondary_cluster
   ]
 
@@ -177,6 +238,27 @@ resource "azapi_resource" "secondary_database" {
     update = "30m"
     delete = "30m"
   }
+}
+
+# Data source to read primary cluster properties
+data "azapi_resource" "primary_cluster_data" {
+  type                   = "Microsoft.Cache/redisEnterprise@2025-05-01-preview"
+  resource_id            = azapi_resource.primary_cluster.id
+  response_export_values = ["properties"]
+
+  depends_on = [azapi_resource.primary_cluster]
+}
+
+# Retrieve primary database access keys
+data "azapi_resource_action" "primary_database_keys" {
+  type        = "Microsoft.Cache/redisEnterprise/databases@2025-05-01-preview"
+  resource_id = azapi_resource.primary_database.id
+  action      = "listKeys"
+  method      = "POST"
+
+  response_export_values = ["primaryKey", "secondaryKey"]
+
+  depends_on = [azapi_resource.primary_database]
 }
 
 # Data source to read secondary cluster properties
