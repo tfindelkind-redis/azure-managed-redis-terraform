@@ -43,7 +43,8 @@ jobs:
       run: |
         # Get the latest API version for Redis Enterprise
         LATEST_API=$(az provider show --namespace Microsoft.Cache --query "resourceTypes[?resourceType=='redisEnterprise'].apiVersions[0]" -o tsv)
-        CURRENT_API=$(grep -o "Microsoft.Cache/redisEnterprise@[0-9\-]*" modules/managed-redis/locals.tf | cut -d@ -f2)
+        # Extract current API version (handles both preview and stable versions)
+        CURRENT_API=$(grep "redis_enterprise_api_version" modules/managed-redis/locals.tf | grep -o '"[^"]*"' | tr -d '"')
         
         echo "latest_api=$LATEST_API" >> $GITHUB_OUTPUT
         echo "current_api=$CURRENT_API" >> $GITHUB_OUTPUT
