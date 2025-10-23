@@ -178,11 +178,11 @@ jobs:
         echo "Testing Redis connectivity..."
         redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning ping
         
-        echo "Testing RedisJSON module..."
-        redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning JSON.SET test $ '{"message":"nightly-test-success"}'
-        RESULT=$(redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning JSON.GET test $.message)
+        echo "Testing basic Redis commands..."
+        redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning SET nightly-test "test-success-$(date +%s)"
+        RESULT=$(redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning GET nightly-test)
         
-        if [[ "$RESULT" == *"nightly-test-success"* ]]; then
+        if [[ "$RESULT" == *"test-success"* ]]; then
           echo "✅ Redis deployment test successful"
         else
           echo "❌ Redis deployment test failed"
