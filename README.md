@@ -90,10 +90,6 @@ Azure Managed Redis consists of:
 3. **Modules** - Optional Redis Enterprise modules (JSON, Search, etc.)
 4. **Security** - TLS encryption and access key management
 
-## �️ Safety Features
-
-> **🔒 Resource Group Protection**: All resource groups are protected from accidental deletion using Terraform's `prevent_destroy` lifecycle rule. See [RESOURCE_GROUP_PROTECTION.md](RESOURCE_GROUP_PROTECTION.md) for details.
-
 **Key Safety Measures**:
 - ✅ Resource groups cannot be deleted via `terraform destroy`
 - ✅ Prevents accidental infrastructure removal
