@@ -5,15 +5,6 @@
 [![Nightly Validation](https://github.com/tfindelkind-redis/azure-managed-redis-terraform/actions/workflows/nightly-validation.yml/badge.svg)](https://github.com/tfindelkind-redis/azure-managed-redis-terraform/actions/workflows/nightly-validation.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## 📚 Examples
-
-| 📁 Example                                         | 📝 Description             | 🎯 Use Case                |
-|----------------------------------------------------|----------------------------|----------------------------|
-| [Simple](examples/simple/)                         | Basic deployment           | Development & testing      |
-| [With Modules](examples/with-modules/)             | Redis modules showcase     | Feature exploration        |
-| [High Availability](examples/high-availability/)   | HA configuration           | High-availability apps     |
-| [Geo-Replication](examples/geo-replication/)       | Global deployment          | Worldwide applications     |
-
 > **Deploy Azure Managed Redis with Terraform — AzAPI Today, Native Tomorrow**
 
 A Terraform module for deploying Azure Managed Redis (Redis Enterprise) with seamless migration path from AzAPI to native azurerm provider.
@@ -38,13 +29,6 @@ Azure Managed Redis consists of:
 3. **Modules** - Optional Redis Enterprise modules (JSON, Search, etc.)
 4. **Security** - TLS encryption and access key management
 
-## 📦 Quick Start
-
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/tfindelkind-redis/azure-managed-redis-terraform)
-[![CI](https://github.com/tfindelkind-redis/azure-managed-redis-terraform/actions/workflows/ci.yml/badge.svg)](https://github.com/tfindelkind-redis/azure-managed-redis-terraform/actions/workflows/ci.yml)
-[![Nightly Validation](https://github.com/tfindelkind-redis/azure-managed-redis-terraform/actions/workflows/nightly-validation.yml/badge.svg)](https://github.com/tfindelkind-redis/azure-managed-redis-terraform/actions/workflows/nightly-validation.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
 ## 📚 Examples
 
 | 📁 Example                                         | 📝 Description             | 🎯 Use Case                |
@@ -53,21 +37,6 @@ Azure Managed Redis consists of:
 | [With Modules](examples/with-modules/)             | Redis modules showcase     | Feature exploration        |
 | [High Availability](examples/high-availability/)   | HA configuration           | High-availability apps     |
 | [Geo-Replication](examples/geo-replication/)       | Global deployment          | Worldwide applications     |
-
-> **Deploy Azure Managed Redis with Terraform — AzAPI Today, Native Tomorrow**
-
-A Terraform module for deploying Azure Managed Redis (Redis Enterprise) with seamless migration path from AzAPI to native azurerm provider.
-
-## ⭐ Features
-
-- **Azure Managed Redis**: Fully managed Redis Enterprise cluster with high performance
-- **Stable API**: Uses Azure Redis Enterprise API version `2024-09-01-preview` (proven stable)
-- **Extended SKU Options**: Support for 40+ SKUs including Balanced, Flash-Optimized, Memory/Compute variants
-- **Future-Proof**: Built with AzAPI provider, ready for azurerm migration
-- **Redis Modules**: Support for RedisJSON, RediSearch, RedisBloom, RedisTimeSeries
-- **Configurable**: High availability, security, and monitoring options
-- **CI/CD Ready**: GitHub Actions workflows for automated validation and deployment
-- **Geo-Replication**: Support for active geo-replication across regions
 
 ## 🏗️ Architecture
 
@@ -84,14 +53,16 @@ Azure Managed Redis consists of:
 
 **Get started in 30 seconds** - no local installation required!
 
-1. **Open in Codespaces**:
+1. **Clone the repo**
+  
+2. **Open in Codespaces**:
    [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/tfindelkind-redis/azure-managed-redis-terraform)
 
-2. **Or manually create a Codespace**:
+4. **Or manually create a Codespace**:
    - Go to: `https://github.com/tfindelkind-redis/azure-managed-redis-terraform`
    - Click the green **"Code"** button → **"Codespaces"** → **"Create codespace on main"**
 
-3. **What you get instantly**:
+5. **What you get instantly**:
    - ✅ **Pre-installed tools**: Terraform, Azure CLI, redis-cli
    - ✅ **VS Code environment** with extensions
    - ✅ **All examples ready** to deploy
@@ -202,8 +173,6 @@ Apply complete! Resources: 3 added, 0 changed, 0 destroyed.
 [INFO] Testing SET/GET operations...
 [SUCCESS] SET operation successful
 [SUCCESS] GET operation successful
-[INFO] Testing RedisJSON module...
-[SUCCESS] RedisJSON working
 [SUCCESS] All tests passed! Redis is working correctly.
 [INFO] Connection string: rediss://:****@redis-demo-1698765432.northeurope.redisenterprise.cache.azure.net:10000
 ```
@@ -340,15 +309,6 @@ redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning FT
 - ✅ **Automated CI/CD** with GitHub Actions workflows
 - ✅ **Connection details** ready for your applications
 
-## �📚 Examples
-
-| Example | Description | Use Case |
-|--------------------------------------------------|------------------------|------------------------|
-| [Simple](examples/simple/)                         | Single standalone cluster  | Development/testing        |
-| [With-Modules](examples/with-modules/)             | Cluster with Redis modules | Feature-rich applications  |
-| [High-Availability](examples/high-availability/)   | HA enabled cluster         | Production workloads       |
-| [Geo-Replication](examples/geo-replication/)       | Active geo-replication     | Worldwide applications     |
-
 ## 🔧 Requirements
 
 | 📦 Component                                                                                                | 📋 Version    |
@@ -356,28 +316,6 @@ redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning FT
 | [Terraform](https://www.terraform.io/)                                                                      | `>= 1.3`      |
 | [AzAPI Provider](https://registry.terraform.io/providers/Azure/azapi/latest)                                | `~> 1.15`     |
 | [AzureRM Provider](https://registry.terraform.io/providers/hashicorp/azurerm/latest)                        | `~> 3.80`     |
-
-## 📋 Module Documentation
-
-For detailed input/output documentation, see: [Module Documentation](modules/managed-redis/README.md)
-
-### Key Inputs
-
-- `name` - Redis Enterprise cluster name
-- `resource_group_name` - Azure resource group
-- `location` - Azure region
-- `sku` - Performance tier (Balanced_B0 to Flash_F1500)
-- `modules` - Redis Enterprise modules to enable
-- `high_availability` - Enable HA across availability zones
-
-### Key Outputs
-
-- `hostname` - Redis database hostname
-- `port` - Redis database port (10000)
-- `primary_key` / `secondary_key` - Access keys (sensitive)
-- `connection_string` - Full Redis connection string for reference (sensitive)
-
-> **Note**: For connecting to Azure Managed Redis, use explicit parameters (`-h`, `-p`, `--tls`, `-a`) instead of the connection string URL format. See examples above.
 
 ## 🔐 Security Best Practices
 
@@ -389,108 +327,6 @@ For detailed input/output documentation, see: [Module Documentation](modules/man
 - ✅ **Access Control**: Support for Azure AD authentication and RBAC
 
 > **Note**: While this module provisions the Redis Enterprise cluster, private endpoints should be configured separately using Azure Private Link resources for enhanced network security. This is the recommended approach for production deployments.
-
-## 🌍 Geo-Replication Support
-
-Deploy with active geo-replication across Azure regions for global applications:
-
-```hcl
-# Primary region
-module "redis_primary" {
-  source = "./modules/managed-redis"
-  name   = "redis-primary"
-  location = "northeurope"
-  # ... other configuration
-}
-
-# Secondary region with geo-replication
-module "redis_secondary" {
-  source = "./modules/managed-redis"
-  name   = "redis-secondary"
-  location = "westeurope"
-  # ... other configuration
-}
-```
-
-## 🚀 CI/CD Integration
-
-### GitHub Actions with OIDC (Recommended)
-
-```yaml
-name: Deploy Redis Infrastructure
-
-on:
-  push:
-    branches: [main]
-
-permissions:
-  id-token: write   # Required for OIDC
-  contents: read
-
-env:
-  TF_VERSION: "1.7.5"
-  ARM_SKIP_PROVIDER_REGISTRATION: "true"
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v3
-      with:
-        terraform_version: ${{ env.TF_VERSION }}
-    
-    - name: Azure CLI Login
-      uses: azure/login@v2
-      with:
-        client-id: ${{ secrets.AZURE_CLIENT_ID }}
-        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-        enable-AzPSSession: false
-
-    - name: Set ARM Environment Variables
-      run: |
-        echo "ARM_CLIENT_ID=${{ secrets.AZURE_CLIENT_ID }}" >> $GITHUB_ENV
-        echo "ARM_TENANT_ID=${{ secrets.AZURE_TENANT_ID }}" >> $GITHUB_ENV
-        echo "ARM_SUBSCRIPTION_ID=${{ secrets.AZURE_SUBSCRIPTION_ID }}" >> $GITHUB_ENV
-        echo "ARM_USE_OIDC=true" >> $GITHUB_ENV
-    
-    - name: Deploy Redis Enterprise
-      run: |
-        cd examples/simple
-        
-        # Create terraform.tfvars
-        cat > terraform.tfvars << EOF
-        resource_group_name = "rg-azure-managed-redis-terraform"
-        location = "northeurope"
-        redis_name = "redis-demo-$(date +%Y%m%d%H%M%S)"
-        environment = "production"
-        create_resource_group = false
-        EOF
-        
-        terraform init
-        terraform plan
-        terraform apply -auto-approve
-```
-
-### GitHub Actions with Service Principal (Legacy)
-
-```yaml
-- name: Deploy Redis Enterprise
-  run: |
-    terraform init
-    terraform plan
-    terraform apply -auto-approve
-  env:
-    ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
-    ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
-    ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-    ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
-```
-
-> **Note**: OIDC authentication is recommended for better security (no stored secrets). The ARM environment variables step is **required** for the AzAPI provider to work with OIDC authentication, as the AzAPI provider needs explicit environment variables to authenticate properly.
 
 ## 🔄 Migration Path
 
@@ -522,31 +358,6 @@ This repository stays current automatically:
 - **Renovate Bot**: Updates provider versions  
 - **CI Matrix**: Validates across provider versions
 - **Auto-Issues**: Creates issues for API version drift
-
-## 🤝 Contributing
-
-We welcome contributions! Please see:
-
-- [Contributing Guidelines](CONTRIBUTING.md)
-- [Code of Conduct](CODE_OF_CONDUCT.md)
-- [Security Policy](SECURITY.md)
-
-### Development Setup
-
-```bash
-# Clone the repository
-git clone https://github.com/tfindelkind-redis/azure-managed-redis-terraform.git
-cd azure-managed-redis-terraform
-
-# Install pre-commit hooks
-pre-commit install
-
-# Run validation and tests
-terraform fmt -recursive
-terraform validate
-tflint --recursive
-tfsec .
-```
 
 ## 📖 Additional Resources
 
