@@ -53,16 +53,20 @@ Azure Managed Redis consists of:
 
 **Get started in 30 seconds** - no local installation required!
 
-1. **Clone the repo**
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/tfindelkind-redis/azure-managed-redis-terraform.git
+   cd azure-managed-redis-terraform
+   ```
   
 2. **Open in Codespaces**:
    [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/tfindelkind-redis/azure-managed-redis-terraform)
 
-4. **Or manually create a Codespace**:
+3. **Or manually create a Codespace**:
    - Go to: `https://github.com/tfindelkind-redis/azure-managed-redis-terraform`
    - Click the green **"Code"** button → **"Codespaces"** → **"Create codespace on main"**
 
-5. **What you get instantly**:
+4. **What you get instantly**:
    - ✅ **Pre-installed tools**: Terraform, Azure CLI, redis-cli
    - ✅ **VS Code environment** with extensions
    - ✅ **All examples ready** to deploy
