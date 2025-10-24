@@ -326,7 +326,9 @@ redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning FT
 - ✅ **Compliance**: SOC, ISO, GDPR ready
 - ✅ **Access Control**: Support for Azure AD authentication and RBAC
 
-> **Note**: While this module provisions the Redis Enterprise cluster, private endpoints should be configured separately using Azure Private Link resources for enhanced network security. This is the recommended approach for production deployments.
+
+> **Note**: While this module provisions the Redis Enterprise cluster with a public endpoint, private endpoints should be configured separately using Azure Private Link resources for enhanced network security. This is the recommended approach for production deployments.
+
 
 ## 🔄 Migration Path
 
