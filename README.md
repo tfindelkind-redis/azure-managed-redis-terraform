@@ -38,15 +38,6 @@ Azure Managed Redis consists of:
 | [High Availability](examples/high-availability/)   | HA configuration           | High-availability apps     |
 | [Geo-Replication](examples/geo-replication/)       | Global deployment          | Worldwide applications     |
 
-## 🏗️ Architecture
-
-Azure Managed Redis consists of:
-
-1. **Redis Enterprise Cluster** - The main compute and storage layer
-2. **Database(s)** - Individual Redis databases within the cluster  
-3. **Modules** - Optional Redis Enterprise modules (JSON, Search, etc.)
-4. **Security** - TLS encryption and access key management
-
 ## �📦 Quick Start
 
 ### ⚡ Instant Setup with GitHub Codespaces (Recommended)
