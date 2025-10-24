@@ -159,7 +159,7 @@ Apply complete! Resources: 3 added, 0 changed, 0 destroyed.
 # Get the connection details for your app
 terraform output redis_connection_info
 terraform output -raw redis_connection_string
-
+```
 
 ### � Local Setup (Alternative)
 
@@ -183,6 +183,7 @@ az account set --subscription "your-subscription-name-or-id"
 cd examples/simple
 terraform init
 terraform apply
+```
 
 ## 🔧 Requirements
 
