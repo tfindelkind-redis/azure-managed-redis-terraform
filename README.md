@@ -62,49 +62,7 @@ Azure Managed Redis consists of:
    - ✅ **VS Code environment** with extensions
    - ✅ **All examples ready** to deploy
    - ✅ **No local setup** required
-
-### � Local Setup (Alternative)
-
-If you prefer to work locally instead of using Codespaces:
-
-```bash
-# 1. Fork the repository on GitHub first, then clone YOUR fork
-git clone https://github.com/YOUR-USERNAME/azure-managed-redis-terraform.git
-cd azure-managed-redis-terraform
-
-# 2. Install prerequisites (if not already installed)
-# - Terraform 1.7.5+
-# - Azure CLI
-# - redis-cli (optional, for testing)
-
-# 3. Authenticate with Azure
-az login
-az account set --subscription "your-subscription-name-or-id"
-
-# 4. Navigate to an example and deploy
-cd examples/simple
-terraform init
-terraform apply
-```
-
-### �🔐 Authentication Setup
-Choose your preferred authentication method:
-
-- **🎯 [Azure Workload Identity (OIDC)](./AUTHENTICATION.md#recommended-azure-workload-identity-oidc)** - Modern, secure, no secrets
-- **⚠️ [Service Principal](./AUTHENTICATION.md#traditional-service-principal-with-secrets)** - Traditional approach
-
-#### 🚀 Quick OIDC Setup (Automated)
-**One-command setup** with automatic GitHub secrets configuration:
-
-```bash
-# Clone the repository and run the setup script
-git clone https://github.com/tfindelkind-redis/azure-managed-redis-terraform.git
-cd azure-managed-redis-terraform
-./scripts/setup-oidc.sh
-```
-
-**Prerequisites**: Azure CLI and GitHub CLI authenticated
-
+  
 ### 🚀 Deploy in Codespaces (5 minutes)
 
 Once your Codespace opens:
@@ -201,132 +159,30 @@ Apply complete! Resources: 3 added, 0 changed, 0 destroyed.
 # Get the connection details for your app
 terraform output redis_connection_info
 terraform output -raw redis_connection_string
-```
 
-### 💻 Local Development Alternative
 
-If you prefer local development:
+### � Local Setup (Alternative)
 
-2. **Create `main.tf`**:
-```hcl
-# Configure providers
-terraform {
-  required_providers {
-    azurerm = { source = "hashicorp/azurerm", version = "~> 3.80" }
-    azapi   = { source = "Azure/azapi", version = "~> 1.15" }
-  }
-}
+If you prefer to work locally instead of using Codespaces:
 
-provider "azurerm" { features {} }
-provider "azapi" {}
-
-# Create resource group
-resource "azurerm_resource_group" "demo" {
-  name     = "rg-azure-managed-redis-terraform"
-  location = "northeurope"
-
-  lifecycle {
-    prevent_destroy = true
-  }
-}
-
-# Deploy Redis Enterprise
-module "redis_enterprise" {
-  source = "git::https://github.com/tfindelkind-redis/azure-managed-redis-terraform.git//modules/managed-redis"
-  
-  name                = "my-redis-cluster"
-  resource_group_name = azurerm_resource_group.demo.name
-  location            = azurerm_resource_group.demo.location
-  
-  # Basic configuration
-  sku     = "Balanced_B1"
-  modules = ["RedisJSON", "RediSearch"]
-  
-  # Security settings
-  high_availability   = true
-  minimum_tls_version = "1.2"
-}
-
-# Output connection details
-output "redis_connection_info" {
-  value = {
-    hostname = module.redis_enterprise.hostname
-    port     = module.redis_enterprise.port
-  }
-}
-
-output "redis_connection_string" {
-  value     = module.redis_enterprise.connection_string
-  sensitive = true
-}
-```
-
-3. **Deploy the infrastructure**:
 ```bash
-# Initialize Terraform
+# 1. Clone the repe
+git clone https://github.com/YOUR-USERNAME/azure-managed-redis-terraform.git
+cd azure-managed-redis-terraform
+
+# 2. Install prerequisites (if not already installed)
+# - Terraform 1.7.5+
+# - Azure CLI
+# - redis-cli (optional, for testing)
+
+# 3. Authenticate with Azure
+az login
+az account set --subscription "your-subscription-name-or-id"
+
+# 4. Navigate to an example and deploy
+cd examples/simple
 terraform init
-
-# Review the deployment plan
-terraform plan
-
-# Deploy (takes ~15-20 minutes)
 terraform apply
-```
-
-4. **What you'll see during deployment**:
-```
-Plan: 3 to add, 0 to change, 0 to destroy.
-
-azurerm_resource_group.demo: Creating...
-azurerm_resource_group.demo: Creation complete after 2s
-module.redis_enterprise.azapi_resource.cluster[0]: Creating...
-module.redis_enterprise.azapi_resource.cluster[0]: Still creating... [5m0s elapsed]
-module.redis_enterprise.azapi_resource.cluster[0]: Creation complete after 12m30s
-module.redis_enterprise.azapi_resource.database[0]: Creating...
-module.redis_enterprise.azapi_resource.database[0]: Creation complete after 3m15s
-
-Apply complete! Resources: 3 added, 0 changed, 0 destroyed.
-
-Outputs:
-redis_connection_info = {
-  "hostname" = "my-redis-cluster.northeurope.redisenterprise.cache.azure.net"
-  "port" = 10000
-}
-redis_connection_string = <sensitive>
-```
-
-5. **Test your Redis deployment**:
-```bash
-# Get connection details
-HOSTNAME=$(terraform output -raw hostname)
-PORT=$(terraform output -raw port)
-PRIMARY_KEY=$(terraform output -raw primary_key)
-
-# Test basic connectivity (requires redis-cli)
-redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning ping
-# Expected output: PONG
-
-# Test RedisJSON module
-redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning JSON.SET user:1 $ '{"name":"John","age":30}'
-# Expected output: OK
-
-redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning JSON.GET user:1 $.name  
-# Expected output: ["John"]
-
-# Test RediSearch module
-redis-cli -h "$HOSTNAME" -p "$PORT" --tls -a "$PRIMARY_KEY" --no-auth-warning FT.CREATE users_idx ON JSON PREFIX 1 user: SCHEMA $.name AS name TEXT
-# Expected output: OK
-```
-
-6. **What you get**:
-- ✅ **Fully managed Redis Enterprise cluster** in Azure
-- ✅ **High availability** across availability zones
-- ✅ **TLS encryption** for all connections
-- ✅ **RedisJSON & RediSearch modules** enabled
-- ✅ **Comprehensive examples** from development to geo-replication deployments
-- ✅ **Configurable security** with customizable security settings
-- ✅ **Automated CI/CD** with GitHub Actions workflows
-- ✅ **Connection details** ready for your applications
 
 ## 🔧 Requirements
 
@@ -370,6 +226,15 @@ module "redis" {
   # ... same configuration - no changes needed!
 }
 ```
+
+### �🔐 Authentication Setup only for Github Workflows
+Choose your preferred authentication method:
+
+- **🎯 [Azure Workload Identity (OIDC)](./AUTHENTICATION.md#recommended-azure-workload-identity-oidc)** - Modern, secure, no secrets
+- **⚠️ [Service Principal](./AUTHENTICATION.md#traditional-service-principal-with-secrets)** - Traditional approach
+
+#### 🚀 Quick OIDC Setup (Automated)
+**One-command setup** with automatic GitHub secrets configuration:
 
 ## 🔄 Automated Updates
 
