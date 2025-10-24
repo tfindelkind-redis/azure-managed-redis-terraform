@@ -53,26 +53,50 @@ Azure Managed Redis consists of:
 
 **Get started in 30 seconds** - no local installation required!
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/tfindelkind-redis/azure-managed-redis-terraform.git
-   cd azure-managed-redis-terraform
-   ```
-  
+1. **Fork the repository**:
+   - Go to: `https://github.com/tfindelkind-redis/azure-managed-redis-terraform`
+   - Click the **"Fork"** button in the top-right corner
+   - This creates your own copy of the repository
+
 2. **Open in Codespaces**:
+   - Click the green **"Code"** button on **your fork**
+   - Select **"Codespaces"** tab
+   - Click **"Create codespace on main"**
+   
+   Or use the quick link (after forking):
    [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/tfindelkind-redis/azure-managed-redis-terraform)
 
-3. **Or manually create a Codespace**:
-   - Go to: `https://github.com/tfindelkind-redis/azure-managed-redis-terraform`
-   - Click the green **"Code"** button → **"Codespaces"** → **"Create codespace on main"**
-
-4. **What you get instantly**:
+3. **What you get instantly**:
    - ✅ **Pre-installed tools**: Terraform, Azure CLI, redis-cli
    - ✅ **VS Code environment** with extensions
    - ✅ **All examples ready** to deploy
    - ✅ **No local setup** required
 
-### 🔐 Authentication Setup
+### � Local Setup (Alternative)
+
+If you prefer to work locally instead of using Codespaces:
+
+```bash
+# 1. Fork the repository on GitHub first, then clone YOUR fork
+git clone https://github.com/YOUR-USERNAME/azure-managed-redis-terraform.git
+cd azure-managed-redis-terraform
+
+# 2. Install prerequisites (if not already installed)
+# - Terraform 1.7.5+
+# - Azure CLI
+# - redis-cli (optional, for testing)
+
+# 3. Authenticate with Azure
+az login
+az account set --subscription "your-subscription-name-or-id"
+
+# 4. Navigate to an example and deploy
+cd examples/simple
+terraform init
+terraform apply
+```
+
+### �🔐 Authentication Setup
 Choose your preferred authentication method:
 
 - **🎯 [Azure Workload Identity (OIDC)](./AUTHENTICATION.md#recommended-azure-workload-identity-oidc)** - Modern, secure, no secrets
