@@ -12,7 +12,7 @@ A Terraform module for deploying Azure Managed Redis (Redis Enterprise) with sea
 ## ⭐ Features
 
 - **Azure Managed Redis**: Fully managed Redis Enterprise cluster with high performance
-- **Stable API**: Uses Azure Redis Enterprise API version `2024-09-01-preview` (proven stable)
+- **Stable API**: Uses Azure Redis Enterprise API version `2025-05-01-preview` (proven stable)
 - **Extended SKU Options**: Support for 40+ SKUs including Balanced, Flash-Optimized, Memory/Compute variants
 - **Future-Proof**: Built with AzAPI provider, ready for azurerm migration
 - **Redis Modules**: Support for RedisJSON, RediSearch, RedisBloom, RedisTimeSeries
