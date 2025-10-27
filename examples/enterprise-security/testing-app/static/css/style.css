@@ -1,0 +1,123 @@
+/* Custom styles for Redis Testing App */
+
+:root {
+    --status-connected: #28a745;
+    --status-disconnected: #dc3545;
+    --status-unknown: #6c757d;
+}
+
+body {
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.status-indicator {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: inline-block;
+    animation: pulse 2s infinite;
+}
+
+.status-indicator.connected {
+    background-color: var(--status-connected);
+}
+
+.status-indicator.disconnected {
+    background-color: var(--status-disconnected);
+}
+
+.status-indicator.unknown {
+    background-color: var(--status-unknown);
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: none;
+    border-radius: 8px;
+}
+
+.card-header {
+    border-radius: 8px 8px 0 0 !important;
+}
+
+.test-result {
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 4px;
+    background-color: #f8f9fa;
+}
+
+.test-result.pass {
+    border-left: 4px solid var(--status-connected);
+}
+
+.test-result.fail {
+    border-left: 4px solid var(--status-disconnected);
+}
+
+.test-name {
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.test-detail {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin-top: 4px;
+}
+
+.metric-value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #007bff;
+}
+
+.json-output {
+    background-color: #2d2d2d;
+    color: #f8f8f2;
+    padding: 15px;
+    border-radius: 4px;
+    overflow-x: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+}
+
+.json-key {
+    color: #66d9ef;
+}
+
+.json-string {
+    color: #a6e22e;
+}
+
+.json-number {
+    color: #ae81ff;
+}
+
+.json-boolean {
+    color: #fd971f;
+}
+
+.badge-test-status {
+    font-size: 0.9rem;
+    padding: 6px 12px;
+}
+
+.btn {
+    border-radius: 6px;
+    padding: 10px 20px;
+}
+
+footer {
+    border-top: 1px solid #dee2e6;
+}
