@@ -13,6 +13,9 @@ terraform.tfvars
 # Connection details
 connection-details.txt
 
+# Key Files
+*.pem
+
 # IDE files
 .vscode/
 .idea/

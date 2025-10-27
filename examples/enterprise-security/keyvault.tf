@@ -47,3 +47,56 @@ resource "azurerm_key_vault_key" "redis" {
     azurerm_role_assignment.kv_crypto_user
   ]
 }
+
+# ============================================================================
+# BYOK (Bring Your Own Key) Support
+# ============================================================================
+
+# Import user-provided key (when use_byok = true)
+resource "null_resource" "import_byok_key" {
+  count = var.use_byok ? 1 : 0
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      # Check if key file exists
+      if [ ! -f "${path.module}/${var.byok_key_file_path}" ]; then
+        echo "❌ Error: ${var.byok_key_file_path} not found!"
+        echo "Run: ./scripts/generate-byok-key.sh"
+        exit 1
+      fi
+
+      echo "🔑 Importing BYOK encryption key to Key Vault..."
+      
+      # Import the key to Key Vault
+      az keyvault key import \
+        --vault-name ${azurerm_key_vault.redis.name} \
+        --name cmk-${var.redis_name} \
+        --pem-file ${path.module}/${var.byok_key_file_path} \
+        --protection software
+      
+      echo "✅ Key imported successfully"
+    EOT
+  }
+
+  depends_on = [
+    azurerm_key_vault.redis,
+    azurerm_role_assignment.current_user_kv_admin,
+    azurerm_role_assignment.kv_crypto_user
+  ]
+
+  triggers = {
+    key_file_hash = filemd5("${path.module}/${var.byok_key_file_path}")
+    key_vault_id  = azurerm_key_vault.redis.id
+  }
+}
+
+# Data source to reference the key (works for both BYOK and Azure-generated)
+data "azurerm_key_vault_key" "redis" {
+  name         = "cmk-${var.redis_name}"
+  key_vault_id = azurerm_key_vault.redis.id
+
+  depends_on = [
+    azurerm_key_vault_key.redis,
+    null_resource.import_byok_key
+  ]
+}
