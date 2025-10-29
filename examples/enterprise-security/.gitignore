@@ -23,6 +23,12 @@ connection-details.txt
 *.swo
 *~
 
+#"Log Files" Folder
+LogFiles/
+
+# Build logs
+build-logs.zip
+
 # OS files
 .DS_Store
 Thumbs.db

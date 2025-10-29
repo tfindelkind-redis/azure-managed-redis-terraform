@@ -16,9 +16,25 @@ resource "azurerm_subnet" "redis" {
   address_prefixes     = var.redis_subnet_prefix
 }
 
+# Subnet for App Service VNet Integration
+resource "azurerm_subnet" "app_service" {
+  name                 = "snet-app-service"
+  resource_group_name  = data.azurerm_resource_group.main.name
+  virtual_network_name = azurerm_virtual_network.redis.name
+  address_prefixes     = ["10.0.2.0/24"]
+
+  delegation {
+    name = "webapp-delegation"
+    service_delegation {
+      name    = "Microsoft.Web/serverFarms"
+      actions = ["Microsoft.Network/virtualNetworks/subnets/action"]
+    }
+  }
+}
+
 # Private DNS Zone for Redis Enterprise
 resource "azurerm_private_dns_zone" "redis" {
-  name                = "privatelink.redisenterprise.cache.azure.net"
+  name                = "privatelink.redis.azure.net"
   resource_group_name = data.azurerm_resource_group.main.name
 
   tags = var.tags

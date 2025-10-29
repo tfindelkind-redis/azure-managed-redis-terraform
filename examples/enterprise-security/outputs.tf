@@ -99,6 +99,6 @@ output "security_features" {
     managed_identity      = true
     high_availability     = length(var.zones) > 1
     tls_version          = var.minimum_tls_version
-    redis_modules        = var.enable_modules
+    redis_modules        = false
   }
 }

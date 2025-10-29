@@ -22,22 +22,16 @@ logger.info("Starting Redis Testing Application")
 # Application Insights integration (if configured)
 if Config.APPLICATIONINSIGHTS_CONNECTION_STRING:
     try:
-        from opencensus.ext.azure.log_exporter import AzureLogHandler
-        from opencensus.ext.flask.flask_middleware import FlaskMiddleware
+        from azure.monitor.opentelemetry import configure_azure_monitor
         
-        # Add Application Insights logging
-        logger.addHandler(
-            AzureLogHandler(connection_string=Config.APPLICATIONINSIGHTS_CONNECTION_STRING)
+        # Configure Azure Monitor OpenTelemetry
+        configure_azure_monitor(
+            connection_string=Config.APPLICATIONINSIGHTS_CONNECTION_STRING,
         )
         
-        # Add middleware for request tracking
-        middleware = FlaskMiddleware(
-            app,
-            exporter=None,  # Using connection string from environment
-        )
-        logger.info("Application Insights integration enabled")
+        logger.info("Application Insights integration enabled (OpenTelemetry)")
     except ImportError:
-        logger.warning("OpenCensus packages not installed, Application Insights disabled")
+        logger.warning("Azure Monitor OpenTelemetry package not installed, Application Insights disabled")
     except Exception as e:
         logger.error(f"Failed to initialize Application Insights: {e}")
 

@@ -52,12 +52,6 @@ variable "minimum_tls_version" {
   default     = "1.2"
 }
 
-variable "enable_modules" {
-  description = "Enable Redis modules (JSON, Search)"
-  type        = bool
-  default     = true
-}
-
 variable "tags" {
   description = "Tags to apply to all resources"
   type        = map(string)

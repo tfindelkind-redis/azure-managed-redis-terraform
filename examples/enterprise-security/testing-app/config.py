@@ -18,6 +18,7 @@ class Config:
     REDIS_PASSWORD = os.environ.get('REDIS_PASSWORD', '')
     REDIS_SSL = os.environ.get('REDIS_SSL', 'true').lower() == 'true'
     REDIS_CLUSTER_NAME = os.environ.get('REDIS_CLUSTER_NAME', 'redis-cluster')
+    REDIS_USE_ENTRA_ID = os.environ.get('REDIS_USE_ENTRA_ID', 'true').lower() == 'true'
     
     # API Configuration
     API_KEY = os.environ.get('API_KEY', 'dev-api-key')

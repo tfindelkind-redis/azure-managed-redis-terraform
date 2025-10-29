@@ -32,6 +32,8 @@ Thumbs.db
 
 # Logs
 *.log
+logs.zip
+redis-test-app.zip
 
 # Temporary files
 *.tmp
@@ -77,6 +79,8 @@ tfsec-results.*
 # Local test directories
 test-outputs/
 **/test-output/
+deployments/
+LogFiles/
 
 # Editor directories and files
 .vscode/*

@@ -77,6 +77,9 @@ show_plan() {
     echo ""
     echo "This script will deploy resources in phases:"
     echo ""
+    echo "  Phase 0: Random Suffix"
+    echo "    • Generate unique suffix for resource names"
+    echo ""
     echo "  Phase 1: Foundation"
     echo "    • Resource Group (data source)"
     echo "    • Network (VNet + Subnet)"
@@ -89,6 +92,7 @@ show_plan() {
     echo "    • Key Vault (Premium SKU)"
     echo "    • Customer Managed Key (RSA 2048)"
     echo "    • Access Policies & Role Assignments"
+    echo "    • RBAC Propagation Wait (60s)"
     echo ""
     echo "  Phase 4: Redis Cache + Private Link"
     echo "    • Redis Enterprise Cluster"
@@ -120,17 +124,23 @@ if [[ ! $REPLY =~ ^[Yy]$ ]]; then
 fi
 echo ""
 
+# Phase 0: Random Suffix (if needed)
+if ! deploy_module "Phase 0: Generate Random Suffix" \
+"random_integer.suffix"; then
+    exit 1
+fi
+
 # Phase 1: Foundation (Network)
 if ! deploy_module "Phase 1: Foundation - Network" \
-"azurerm_virtual_network.main
-azurerm_subnet.redis_pe"; then
+"azurerm_virtual_network.redis
+azurerm_subnet.redis"; then
     exit 1
 fi
 
 # Phase 2: Security Identity
 if ! deploy_module "Phase 2: Security - Managed Identities" \
 "azurerm_user_assigned_identity.redis
-azurerm_user_assigned_identity.keyvault_access"; then
+azurerm_user_assigned_identity.keyvault"; then
     exit 1
 fi
 
@@ -153,17 +163,23 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     
     # Deploy Key Vault first
     terraform apply \
-        -target="azurerm_key_vault.main" \
+        -target="azurerm_key_vault.redis" \
         -auto-approve
     
     # Deploy Key Vault Key
     terraform apply \
-        -target="azurerm_key_vault_key.cmk" \
+        -target="azurerm_key_vault_key.redis" \
         -auto-approve
     
     # Deploy Role Assignments
     terraform apply \
-        -target="azurerm_role_assignment.keyvault_crypto_user" \
+        -target="azurerm_role_assignment.current_user_kv_admin" \
+        -target="azurerm_role_assignment.kv_crypto_user" \
+        -auto-approve
+    
+    # Wait for RBAC to propagate
+    terraform apply \
+        -target="time_sleep.wait_for_rbac" \
         -auto-approve
     
     echo ""
@@ -261,6 +277,11 @@ echo ""
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo -e "${GREEN}✅ Deploying Testing App Service...${NC}"
     
+    # Generate API key
+    terraform apply \
+        -target="random_password.api_key" \
+        -auto-approve
+    
     # Deploy Log Analytics Workspace first
     terraform apply \
         -target="azurerm_log_analytics_workspace.redis" \
@@ -331,33 +352,28 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
         RESOURCE_GROUP=$(terraform output -raw resource_group_name)
         
         echo -e "${YELLOW}Deploying to App Service: ${APP_NAME}...${NC}"
-        az webapp deployment source config-zip \
+        echo -e "${YELLOW}This may take a few minutes...${NC}"
+        
+        # Use az webapp deploy (newer method)
+        if az webapp deploy \
             --resource-group "$RESOURCE_GROUP" \
             --name "$APP_NAME" \
-            --src "$ZIP_FILE" \
-            --timeout 600 \
-            > /dev/null 2>&1
-        
-        # Check if Redis is deployed and update password
-        REDIS_NAME=$(terraform output -raw cluster_name 2>/dev/null || echo "")
-        if [ -n "$REDIS_NAME" ]; then
-            echo -e "${YELLOW}Updating Redis password in Key Vault...${NC}"
-            REDIS_PASSWORD=$(az redisenterprise database list-keys \
-                --cluster-name "$REDIS_NAME" \
-                --resource-group "$RESOURCE_GROUP" \
-                --query primaryKey -o tsv 2>/dev/null || echo "")
-            
-            if [ -n "$REDIS_PASSWORD" ]; then
-                KEY_VAULT_NAME=$(terraform output -json key_vault_id | jq -r 'split("/") | .[-1]')
-                az keyvault secret set \
-                    --vault-name "$KEY_VAULT_NAME" \
-                    --name "redis-password" \
-                    --value "$REDIS_PASSWORD" \
-                    --output none 2>/dev/null
-                
-                echo -e "${GREEN}✓ Redis password updated${NC}"
-            fi
+            --src-path "$ZIP_FILE" \
+            --type zip \
+            --clean true \
+            --restart true \
+            --async false 2>&1 | tee /tmp/deploy.log; then
+            echo -e "${GREEN}✓ App deployment successful${NC}"
+        else
+            echo -e "${RED}⚠️  App deployment may have failed${NC}"
+            echo -e "${YELLOW}   Check logs: https://${APP_NAME}.scm.azurewebsites.net${NC}"
+            echo -e "${YELLOW}   If Azure is experiencing issues, try again later${NC}"
         fi
+        
+        # Note: Redis is using Entra ID authentication (access keys disabled)
+        # No password needed - the App Service uses managed identity
+        echo -e "${YELLOW}ℹ️  Redis is configured with Entra ID authentication${NC}"
+        echo -e "${YELLOW}   App Service will authenticate using managed identity${NC}"
         
         # Restart App Service
         echo -e "${YELLOW}Restarting App Service...${NC}"
@@ -422,9 +438,15 @@ if [ "$APP_SERVICE_DEPLOYED" -gt 0 ]; then
         echo "  ${GREEN}2. Get API Key:${NC}"
         echo "     ${YELLOW}$(terraform output -raw api_key_command 2>/dev/null)${NC}"
         echo ""
-        echo "  ${GREEN}3. Test Redis via API:${NC}"
+        echo "  ${GREEN}3. Test Redis Connection (via Entra ID):${NC}"
+        echo "     ${YELLOW}curl ${APP_URL}/health${NC}"
+        echo ""
+        echo "  ${GREEN}4. Test Redis Operations:${NC}"
         echo "     ${YELLOW}curl -X POST ${APP_URL}/api/redis/test \\${NC}"
         echo "     ${YELLOW}  -H \"X-API-Key: \$(az keyvault secret show --vault-name <vault> --name api-key --query value -o tsv)\"${NC}"
+        echo ""
+        echo "  ${GREEN}5. Verify Entra ID Authentication:${NC}"
+        echo "     ${YELLOW}Check App Service logs for \"Using Entra ID managed identity authentication\"${NC}"
         echo ""
     fi
 else

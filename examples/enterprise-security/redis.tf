@@ -27,17 +27,10 @@ resource "azurerm_managed_redis" "main" {
 
   # Default Database Configuration
   default_database {
-    client_protocol   = "Encrypted"
-    clustering_policy = "EnterpriseCluster"
-    eviction_policy   = "NoEviction"
-
-    # Redis Modules (conditionally enabled)
-    dynamic "module" {
-      for_each = var.enable_modules ? ["RedisJSON", "RediSearch"] : []
-      content {
-        name = module.value
-      }
-    }
+    access_keys_authentication_enabled = false
+    client_protocol                     = "Encrypted"
+    clustering_policy                   = "EnterpriseCluster"
+    eviction_policy                     = "NoEviction"
   }
 
   tags = var.tags
