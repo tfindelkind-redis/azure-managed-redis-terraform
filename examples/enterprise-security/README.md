@@ -1,6 +1,6 @@
 # Enterprise Security Example (Private Endpoint + High Availability + CMK + Managed Identity)
 
-This example demonstrates Azure Managed Redis (Redis Enterprise) with **full enterprise-grade security features** using the **module with flexible provider support**.
+This example demonstrates a **production-ready, enterprise-grade Redis deployment** that combines all essential security layers into a comprehensive reference architecture. It showcases Customer Managed Keys (CMK) for encryption, Private Link for network isolation, Managed Identity for passwordless authentication, and Entra ID-based access control with access policy assignments. The deployment includes a working Python test application that validates the complete security stack, from encrypted data at rest to secure token-based authentication. **This serves as the definitive example for organizations requiring maximum security, compliance, and governance** for their Redis infrastructure in Azure.
 
 ## 🎨 Demo Application
 
