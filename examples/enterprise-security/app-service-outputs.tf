@@ -29,3 +29,23 @@ output "log_analytics_workspace_id" {
   description = "Log Analytics workspace ID for monitoring"
   value       = azurerm_log_analytics_workspace.redis.id
 }
+
+output "app_deployment_status" {
+  description = "Status of the application deployment"
+  value       = "✅ App deployed automatically via Terraform. Check health at: https://${azurerm_linux_web_app.redis_test.default_hostname}/api/health"
+  depends_on  = [null_resource.deploy_app]
+}
+
+output "app_test_commands" {
+  description = "Commands to test the deployed application"
+  value = <<-EOT
+    # Test health endpoint
+    curl https://${azurerm_linux_web_app.redis_test.default_hostname}/api/health
+    
+    # Get API key from Key Vault
+    API_KEY=$(az keyvault secret show --vault-name ${azurerm_key_vault.redis.name} --name api-key --query value -o tsv)
+    
+    # Test Redis connectivity (requires API key in header)
+    curl -H "X-API-Key: $API_KEY" https://${azurerm_linux_web_app.redis_test.default_hostname}/api/redis/ping
+  EOT
+}

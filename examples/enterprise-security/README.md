@@ -142,6 +142,30 @@ terraform apply
 
 # 6. View outputs
 terraform output
+
+# Note: The Python test application (app.zip) will be automatically
+# deployed to the App Service during terraform apply!
+```
+
+### Modular (Phased) Deployment
+
+For step-by-step deployment with more control:
+
+```bash
+cd examples/enterprise-security
+
+# Run the modular deployment script
+./scripts/deploy-modular.sh
+
+# This will deploy in phases:
+# - Phase 0: Random suffix generation
+# - Phase 1: Network (VNet + Subnet)
+# - Phase 2: Managed Identities
+# - Phase 3: Key Vault & Encryption
+# - Phase 4: Redis + Private Link
+# - Phase 5: App Service + Automated App Deployment (via Terraform)
+
+# You can skip phases you don't need!
 ```
 
 ### Switch Between Providers
@@ -159,14 +183,6 @@ This example supports both AzAPI and AzureRM providers:
 # After switching, run:
 terraform init -upgrade
 terraform plan
-```
-terraform init
-
-# 4. Plan deployment
-terraform plan
-
-# 5. Apply deployment
-terraform apply
 ```
 
 ## 🔧 Configuration
@@ -254,22 +270,37 @@ Since Redis is deployed with **Private Link only**, you need network access:
 
 **Option 1: Deploy Test App Service with VNet Integration** ✨
 
-This example includes infrastructure for a test application (see `app.tf`):
+This example includes infrastructure for a test application that is **automatically deployed**:
 
 ```bash
-# The terraform.tfvars includes app service deployment
-# It will create:
-# ✅ App Service with VNet integration
-# ✅ Application Insights for monitoring
-# ✅ Managed Identity for secure Redis access
-# ✅ Key Vault integration for secrets
+# When you run terraform apply, it will automatically:
+# ✅ Create App Service with VNet integration
+# ✅ Deploy the Python Flask application from app.zip
+# ✅ Configure Application Insights for monitoring
+# ✅ Set up Managed Identity for secure Redis access
+# ✅ Configure Key Vault integration for secrets
 
-# After terraform apply, test connectivity:
+# After terraform apply completes, test the app:
 APP_URL=$(terraform output -raw app_service_url)
+
+# Test health endpoint
 curl "$APP_URL/api/health"
+
+# Get API key and test Redis connectivity
+API_KEY=$(az keyvault secret show \
+  --vault-name $(terraform output -raw key_vault_id | awk -F/ '{print $NF}') \
+  --name api-key \
+  --query value -o tsv)
+
+curl -H "X-API-Key: $API_KEY" "$APP_URL/api/redis/ping"
 ```
 
-**Option 2: Deploy a Test VM**
+**How it works:**
+- Terraform uses a `null_resource` with `local-exec` provisioner
+- Automatically runs `az webapp deployment source config-zip` after App Service creation
+- Deploys the `app.zip` file containing the Python Flask application
+- Waits for the app to be healthy before completing
+- Re-deploys automatically if `app.zip` content changes
 
 **Option 2: Use Azure Bastion or VPN**
 ```bash
@@ -364,6 +395,10 @@ After deployment, the following outputs are available:
 | `customer_managed_key_enabled` | Whether CMK is enabled | No |
 | `vnet_id` | Virtual network resource ID | No |
 | `security_features` | Security features summary | No |
+| `app_service_url` | Test application URL | No |
+| `app_service_name` | Test application name | No |
+| `app_deployment_status` | Application deployment status | No |
+| `app_test_commands` | Commands to test the app | No |
 
 ### Get Outputs
 

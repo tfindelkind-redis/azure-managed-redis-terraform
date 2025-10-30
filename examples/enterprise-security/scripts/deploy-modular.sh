@@ -106,7 +106,7 @@ show_plan() {
     echo "    • App Service (Web App)"
     echo "    • Application Insights"
     echo "    • Log Analytics Workspace"
-    echo "    • Flask Testing Application"
+    echo "    • Flask Testing Application (via Terraform automation)"
     echo ""
     echo -e "${YELLOW}💡 Tip: You can skip phases and deploy only what you need!${NC}"
     echo -e "${YELLOW}💡 Note: Private Link is now automatically included with Redis (Phase 4)${NC}"
@@ -219,7 +219,7 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     
     # Deploy Redis first
     terraform apply \
-        -target="azurerm_managed_redis.main" \
+        -target="module.redis_enterprise" \
         -auto-approve
     
     echo ""
@@ -267,8 +267,10 @@ echo "  - App Service (Python 3.11)"
 echo "  - Application Insights"
 echo "  - Log Analytics Workspace"
 echo "  - VNet Integration for Private Link access"
+echo "  - Flask app (automatically deployed via Terraform)"
 echo ""
 echo -e "${YELLOW}💡 Cost: ~\$70/month for App Service S1${NC}"
+echo -e "${YELLOW}💡 The app.zip will be deployed using Terraform's null_resource${NC}"
 echo ""
 
 read -p "Deploy Testing App Service? (y/n/skip): " -n 1 -r
@@ -317,96 +319,30 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo -e "${GREEN}✅ Testing App Service deployed successfully${NC}"
     echo ""
     
-    # Ask if user wants to deploy the Flask app
-    echo -e "${YELLOW}Would you like to deploy the Flask testing application now?${NC}"
-    read -p "Deploy Flask app? (y/n): " -n 1 -r
+    # Deploy the Flask app using Terraform's automated approach
+    echo -e "${BLUE}Deploying Flask application via Terraform...${NC}"
+    echo -e "${YELLOW}This will use the null_resource with local-exec provisioner${NC}"
+    echo -e "${YELLOW}The app.zip file will be automatically deployed...${NC}"
     echo ""
     
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo -e "${BLUE}Deploying Flask application...${NC}"
-        
-        # Change to app directory
-        cd testing-app
-        
-        # Create clean deployment package
-        ZIP_FILE="../redis-test-app.zip"
-        rm -f "$ZIP_FILE"
-        
-        echo -e "${YELLOW}Creating clean deployment package...${NC}"
-        zip -r "$ZIP_FILE" . \
-            -x "*.pyc" \
-            -x "**/__pycache__/*" \
-            -x "__pycache__/*" \
-            -x ".pytest_cache/*" \
-            -x "*.egg-info/*" \
-            -x ".env*" \
-            -x ".git/*" \
-            -x "*.log" \
-            -x ".DS_Store" \
-            -x "venv/*" \
-            -x ".venv/*" \
-            -x "test-venv/*" \
-            -x "env/*" \
-            -x ".env/*" \
-            > /dev/null 2>&1
-        
-        # Verify package size
-        PKG_SIZE=$(ls -lh "$ZIP_FILE" | awk '{print $5}')
-        echo -e "${GREEN}✓ Clean package created: $PKG_SIZE${NC}"
-        
-        # Go back to terraform directory
-        cd ..
-        
-        # Get App Service details
-        APP_NAME=$(terraform output -raw app_service_name)
-        RESOURCE_GROUP=$(terraform output -raw resource_group_name)
-        
-        echo -e "${YELLOW}Deploying to App Service: ${APP_NAME}...${NC}"
-        echo -e "${YELLOW}This may take a few minutes...${NC}"
-        
-        # Use az webapp deploy (newer method)
-        if az webapp deploy \
-            --resource-group "$RESOURCE_GROUP" \
-            --name "$APP_NAME" \
-            --src-path "$ZIP_FILE" \
-            --type zip \
-            --clean true \
-            --restart true \
-            --async false 2>&1 | tee /tmp/deploy.log; then
-            echo -e "${GREEN}✓ App deployment successful${NC}"
-        else
-            echo -e "${RED}⚠️  App deployment may have failed${NC}"
-            echo -e "${YELLOW}   Check logs: https://${APP_NAME}.scm.azurewebsites.net${NC}"
-            echo -e "${YELLOW}   If Azure is experiencing issues, try again later${NC}"
-        fi
-        
-        # Note: Redis is using Entra ID authentication (access keys disabled)
-        # No password needed - the App Service uses managed identity
-        echo -e "${YELLOW}ℹ️  Redis is configured with Entra ID authentication${NC}"
-        echo -e "${YELLOW}   App Service will authenticate using managed identity${NC}"
-        
-        # Restart App Service
-        echo -e "${YELLOW}Restarting App Service...${NC}"
-        az webapp restart \
-            --resource-group "$RESOURCE_GROUP" \
-            --name "$APP_NAME" \
-            --output none 2>/dev/null
-        
-        # Clean up
-        rm -f "$ZIP_FILE"
-        
-        echo ""
-        echo -e "${GREEN}✅ Flask application deployed successfully${NC}"
-        echo ""
-        
-        # Show App Service URL
-        APP_URL=$(terraform output -raw app_service_url)
+    # Deploy the null_resource which handles app deployment
+    terraform apply \
+        -target="null_resource.deploy_app" \
+        -auto-approve
+    
+    echo ""
+    echo -e "${GREEN}✅ Flask application deployed via Terraform${NC}"
+    echo ""
+    
+    # Show App Service URL
+    APP_URL=$(terraform output -raw app_service_url 2>/dev/null || echo "")
+    if [ -n "$APP_URL" ]; then
         echo -e "${BLUE}🌐 Application URL:${NC}"
         echo -e "  ${GREEN}${APP_URL}${NC}"
         echo ""
-    else
-        echo -e "${YELLOW}ℹ️  Skipping Flask app deployment${NC}"
-        echo -e "${YELLOW}   You can deploy it later with: ./deploy-test-app.sh${NC}"
+        echo -e "${YELLOW}ℹ️  Redis is configured with Entra ID authentication${NC}"
+        echo -e "${YELLOW}   App Service authenticates using managed identity${NC}"
+        echo ""
     fi
     
 elif [[ $REPLY =~ ^[Ss]$ ]]; then
@@ -461,9 +397,9 @@ if [ "$APP_SERVICE_DEPLOYED" -gt 0 ]; then
     fi
 else
     echo "  ${GREEN}1. Deploy Testing App Service:${NC}"
-    echo "     ${YELLOW}./deploy-modular.sh${NC} (and select Yes for Phase 6)"
+    echo "     ${YELLOW}./scripts/deploy-modular.sh${NC} (and select Yes for Phase 5)"
     echo "     OR"
-    echo "     ${YELLOW}terraform apply -target=azurerm_linux_web_app.redis_test${NC}"
+    echo "     ${YELLOW}terraform apply${NC} (deploys everything including app)"
     echo ""
 fi
 
@@ -471,12 +407,13 @@ echo "  ${GREEN}View deployment details:${NC}"
 echo "     ${YELLOW}terraform show${NC}"
 echo ""
 echo "  ${GREEN}If something failed, re-run this script:${NC}"
-echo "     ${YELLOW}./deploy-modular.sh${NC}"
+echo "     ${YELLOW}./scripts/deploy-modular.sh${NC}"
 echo "     (Already deployed resources will be skipped)"
 echo ""
 
 echo -e "${YELLOW}💡 Pro Tips:${NC}"
-echo "  • To redeploy only Redis: terraform apply -target=azurerm_managed_redis.main"
+echo "  • To redeploy app only: terraform apply -target=null_resource.deploy_app"
+echo "  • To redeploy Redis only: terraform apply -target=module.redis_enterprise"
 echo "  • To redeploy only Key Vault: terraform apply -target=azurerm_key_vault.redis"
 echo "  • To redeploy only Private Endpoint: terraform apply -target=azurerm_private_endpoint.redis"
 echo "  • To redeploy only App Service: terraform apply -target=azurerm_linux_web_app.redis_test"

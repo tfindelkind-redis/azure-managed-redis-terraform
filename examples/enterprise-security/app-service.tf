@@ -170,3 +170,52 @@ resource "azurerm_role_assignment" "kv_secrets_user" {
   role_definition_name = "Key Vault Secrets User"
   principal_id         = azurerm_user_assigned_identity.redis.principal_id
 }
+
+# Automated App Deployment using Azure CLI
+resource "null_resource" "deploy_app" {
+  # Trigger redeployment if app.zip changes or app service is recreated
+  triggers = {
+    app_zip_hash    = filemd5("${path.module}/app.zip")
+    app_service_id  = azurerm_linux_web_app.redis_test.id
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      echo "🚀 Deploying application code to ${azurerm_linux_web_app.redis_test.name}..."
+      
+      # Wait for App Service to be fully ready
+      sleep 30
+      
+      # Deploy the app.zip using Azure CLI
+      az webapp deployment source config-zip \
+        --resource-group ${data.azurerm_resource_group.main.name} \
+        --name ${azurerm_linux_web_app.redis_test.name} \
+        --src ${path.module}/app.zip
+      
+      echo "✅ Application deployment complete!"
+      
+      # Wait for deployment to complete and app to start
+      sleep 45
+      
+      echo "🔍 Checking app health..."
+      APP_URL="https://${azurerm_linux_web_app.redis_test.default_hostname}"
+      
+      # Try to reach health endpoint (may take a few minutes for first start)
+      for i in {1..10}; do
+        if curl -sf "$APP_URL/api/health" > /dev/null 2>&1; then
+          echo "✅ App is healthy and responding!"
+          break
+        else
+          echo "⏳ Waiting for app to start (attempt $i/10)..."
+          sleep 15
+        fi
+      done
+    EOT
+  }
+
+  depends_on = [
+    azurerm_linux_web_app.redis_test,
+    azurerm_role_assignment.kv_secrets_user,
+    module.redis_enterprise
+  ]
+}
