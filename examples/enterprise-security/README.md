@@ -1,8 +1,12 @@
 # Enterprise Security Example (Private Endpoint + High Availability + CMK + Managed Identity)
 
-This example demonstrates Azure Managed Redis (Redis Enterprise) with **full enterprise-grade security features** using the **module with AzAPI provider support**.
+This example demonstrates Azure Managed Redis (Redis Enterprise) with **full enterprise-grade security features** using the **module with flexible provider support**.
 
-> **✅ Provider Flexibility**: This example uses the managed-redis module which supports both AzureRM and AzAPI providers. It's currently configured to use **AzAPI** (via `use_azapi = true`) which provides complete feature support including Customer Managed Keys and Managed Identity with the latest Azure API.
+> **✅ Provider Flexibility**: 
+> - **Redis cluster/database**: Supports both AzureRM and AzAPI providers (configured via `use_azapi` variable)
+> - **Access policy assignments**: Require AzAPI for Terraform users (azurerm doesn't support this resource type yet)
+> - **Bicep/ARM users**: All resources fully supported via native ARM resource types - no workarounds needed!
+> - Currently configured to use **AzAPI** (`use_azapi = true`) for complete feature support with the latest Azure API
 
 ## 🔐 Security Features
 
@@ -185,13 +189,42 @@ terraform init -upgrade
 terraform plan
 ```
 
-## 🔧 Configuration
+### Provider Support & Terraform vs Bicep/ARM
 
-### Provider Support
-
-This example uses the **managed-redis module** which supports both AzureRM and AzAPI providers via the `use_azapi` variable.
+This example uses the **managed-redis module** which supports both AzureRM and AzAPI providers via the `use_azapi` variable for the **Redis cluster and database resources**.
 
 **Current Configuration: AzAPI Provider** (`use_azapi = true`)
+
+#### Important Provider Notes:
+
+##### For Terraform Users:
+
+**Redis Cluster/Database:**
+- ✅ **AzureRM provider**: Supported (use `use_azapi = false`)
+- ✅ **AzAPI provider**: Supported (use `use_azapi = true`)
+
+**Access Policy Assignments (required for EntraID auth):**
+- ❌ **AzureRM provider**: NOT supported (as of v4.x - Jan 2025)
+- ✅ **AzAPI provider**: REQUIRED - must always use AzAPI
+
+This means:
+- You can choose between `azurerm` or `azapi` for the main Redis resources
+- Access policy assignments (`redis-access-policy.tf`) **always require AzAPI**
+- The `azapi` provider must be included in your `versions.tf` regardless of your choice
+
+##### For Bicep/ARM Users:
+
+All resources including access policy assignments are **fully supported** via native resource types:
+- `Microsoft.Cache/redisEnterprise` - Cluster
+- `Microsoft.Cache/redisEnterprise/databases` - Database
+- `Microsoft.Cache/redisEnterprise/databases/accessPolicyAssignments` - Access policies
+
+No workarounds needed! See the [Azure Verified Modules (AVM)](https://github.com/Azure/bicep-registry-modules/tree/main/avm/res/cache/redis-enterprise) for Bicep examples.
+
+**📚 For detailed provider comparison and limitations, see [PROVIDER_SUPPORT.md](./PROVIDER_SUPPORT.md)**
+
+## 🔧 Configuration
+
 
 **Why AzAPI for this example?**
 - Full support for Customer Managed Keys (CMK) with the latest API

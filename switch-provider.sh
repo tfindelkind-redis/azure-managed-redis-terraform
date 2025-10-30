@@ -1,6 +1,19 @@
 #!/bin/bash
 set -e
 
+# =============================================================================
+# Provider Switching Script for Azure Managed Redis
+# =============================================================================
+# This script switches between AzAPI and AzureRM providers for the Redis
+# cluster and database resources.
+#
+# IMPORTANT NOTE:
+# - Access policy assignments ALWAYS require AzAPI (azurerm doesn't support them)
+# - This script only switches the provider for Redis cluster/database resources
+# - The azapi provider must remain in versions.tf for access policy assignments
+# - For Bicep/ARM deployments, all resources are natively supported
+# =============================================================================
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'

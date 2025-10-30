@@ -114,8 +114,9 @@ resource "azapi_resource" "database" {
 }
 
 # Retrieve database access keys (AzAPI Implementation)
+# Only retrieve keys if access keys authentication is enabled
 data "azapi_resource_action" "database_keys" {
-  count = var.use_azapi ? 1 : 0
+  count = var.use_azapi && var.access_keys_authentication_enabled ? 1 : 0
 
   type        = "Microsoft.Cache/redisEnterprise/databases@${local.redis_enterprise_api_version}"
   resource_id = azapi_resource.database[0].id

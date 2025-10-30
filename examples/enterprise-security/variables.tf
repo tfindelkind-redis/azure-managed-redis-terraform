@@ -66,11 +66,16 @@ variable "tags" {
 # ============================================================================
 # Provider Configuration
 # ============================================================================
+# Provider Selection
+# ============================================================================
+# Note: The main Redis module supports both azurerm and azapi providers.
+# However, access policy assignments ALWAYS require azapi for Terraform users
+# (they work natively in Bicep/ARM).
 
 variable "use_azapi" {
-  description = "Use AzAPI provider instead of AzureRM for Redis resources (currently not implemented - AzureRM only)"
+  description = "Use AzAPI provider instead of AzureRM for Redis cluster/database resources. Access policy assignments always require AzAPI for Terraform (azurerm doesn't support this resource type yet)."
   type        = bool
-  default     = false
+  default     = true
 }
 
 # ============================================================================

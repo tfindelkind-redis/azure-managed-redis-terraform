@@ -305,6 +305,19 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
         -target="azurerm_role_assignment.kv_secrets_user" \
         -auto-approve
     
+    # Deploy role assignment for Redis access (Entra ID authentication)
+    echo -e "${BLUE}Configuring Redis RBAC role assignment...${NC}"
+    terraform apply \
+        -target="azurerm_role_assignment.redis_contributor" \
+        -auto-approve
+    
+    # Deploy Redis access policy for Entra ID authentication (CRITICAL for EntraID auth)
+    echo -e "${BLUE}Configuring Redis access policy assignment for managed identity...${NC}"
+    echo -e "${YELLOW}This allows the managed identity to authenticate to Redis with EntraID${NC}"
+    terraform apply \
+        -target="azapi_resource.redis_access_policy" \
+        -auto-approve
+    
     # Deploy App Service Plan
     terraform apply \
         -target="azurerm_service_plan.redis_test" \

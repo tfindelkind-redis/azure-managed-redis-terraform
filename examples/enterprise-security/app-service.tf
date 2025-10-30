@@ -216,6 +216,7 @@ resource "null_resource" "deploy_app" {
   depends_on = [
     azurerm_linux_web_app.redis_test,
     azurerm_role_assignment.kv_secrets_user,
+    azurerm_role_assignment.redis_contributor,
     module.redis_enterprise
   ]
 }

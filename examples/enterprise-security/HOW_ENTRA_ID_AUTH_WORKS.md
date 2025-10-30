@@ -90,15 +90,50 @@ resource "azurerm_user_assigned_identity" "redis" {
 }
 ```
 
-#### 2. Access Policy Assignment (Terraform)
+#### 2. Access Policy Assignment (Terraform with AzAPI)
+
+**CRITICAL:** The Azure Managed Redis access policy API is different from Azure Cache for Redis.
+
 ```hcl
-resource "azurerm_redis_enterprise_database_access_policy_assignment" "app" {
-  name                 = "ManagedIdentityAccess"
-  cluster_id           = azurerm_managed_redis.main.id
-  database_name        = "default"
-  access_policy_name   = "default"
-  object_id            = azurerm_user_assigned_identity.redis.principal_id
-  object_id_alias      = "app-identity"
+# Required: AzAPI provider (azurerm doesn't support this yet)
+resource "azapi_resource" "redis_access_policy" {
+  type      = "Microsoft.Cache/redisEnterprise/databases/accessPolicyAssignments@2024-10-01"
+  name      = "app-managed-identity"
+  parent_id = azurerm_managed_redis.main.database_id
+  
+  # Must disable schema validation as the resource type is not in the provider's schema yet
+  schema_validation_enabled = false
+
+  body = jsonencode({
+    properties = {
+      accessPolicyName = "default"  # MUST be "default" for Azure Managed Redis
+      user = {
+        objectId = azurerm_user_assigned_identity.redis.principal_id
+      }
+    }
+  })
+}
+```
+
+**Key Differences from Azure Cache for Redis:**
+- ✅ Access policy name must be `"default"` (not custom names like "Data Contributor")
+- ✅ User property is a **nested object** with `objectId` (not flat `objectId` + `objectIdAlias`)
+- ✅ **Bicep/ARM**: Fully supported via native `Microsoft.Cache/redisEnterprise/databases/accessPolicyAssignments` resource
+- ✅ **Terraform**: Must use AzAPI provider (azurerm doesn't support this resource type as of v4.x)
+- ✅ Resource type is under `/databases/` path (not directly under cluster)
+
+**For Bicep/ARM users:**
+
+```bicep
+resource accessPolicy 'Microsoft.Cache/redisEnterprise/databases/accessPolicyAssignments@2024-10-01' = {
+  parent: database
+  name: 'app-managed-identity'
+  properties: {
+    accessPolicyName: 'default'  // MUST be "default"
+    user: {
+      objectId: managedIdentity.properties.principalId
+    }
+  }
 }
 ```
 
@@ -123,12 +158,26 @@ resource "azurerm_linux_web_app" "app" {
 
 #### 4. Disable Access Keys (Terraform)
 ```hcl
-resource "azurerm_managed_redis" "main" {
-  # ... other config ...
+# Using AzAPI for Azure Managed Redis
+resource "azapi_resource" "redis_database" {
+  type      = "Microsoft.Cache/redisEnterprise/databases@2024-10-01"
+  name      = "default"
+  parent_id = azurerm_managed_redis_cluster.main.id
   
-  access_keys_authentication = "Disabled"  # Force Entra ID only
+  body = jsonencode({
+    properties = {
+      accessKeysAuthentication = "Disabled"  # Force Entra ID only
+      # ... other database properties
+    }
+  })
 }
 ```
+
+**Important:** When access keys are disabled:
+1. ✅ All connections MUST use Entra ID authentication
+2. ✅ Access policy assignment is REQUIRED
+3. ✅ Traditional password-based connections will fail
+4. ⚠️ Existing connections will be terminated when you disable access keys
 
 ## 🔄 How It Works Step-by-Step
 
@@ -304,6 +353,93 @@ value = client.get('mykey')  # Returns 'myvalue'
 - **GitHub Repo:** https://github.com/redis/redis-py-entraid
 - **Microsoft Docs:** https://learn.microsoft.com/en-us/azure/azure-cache-for-redis/managed-redis/managed-redis-entra-for-authentication
 
+## 🐛 Troubleshooting
+
+### "invalid username-password pair" Error
+
+This means the managed identity doesn't have an access policy assignment.
+
+**Solution:**
+1. Verify access policy exists:
+   ```bash
+   az rest --method GET 
+     --uri "/subscriptions/{subscription-id}/resourceGroups/{rg}/providers/Microsoft.Cache/redisEnterprise/{cluster}/databases/default/accessPolicyAssignments?api-version=2024-10-01"
+   ```
+
+2. Create access policy if missing:
+   ```bash
+   az rest --method PUT 
+     --uri "/subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.Cache/redisEnterprise/{cluster}/databases/default/accessPolicyAssignments/app-identity?api-version=2024-10-01" 
+     --body '{
+       "properties": {
+         "accessPolicyName": "default",
+         "user": {
+           "objectId": "{managed-identity-principal-id}"
+         }
+       }
+     }'
+   ```
+
+3. Restart your app to pick up the new permissions
+
+### Connection Refused / Cannot Connect
+
+**Check these in order:**
+
+1. **VNet Integration** (for private endpoint):
+   ```bash
+   az webapp vnet-integration list --name {app-name} --resource-group {rg}
+   ```
+
+2. **Private DNS Resolution**:
+   ```bash
+   # From App Service Kudu console
+   nslookup {redis-hostname}
+   # Should resolve to private IP (e.g., 10.0.x.x)
+   ```
+
+3. **Managed Identity Assigned**:
+   ```bash
+   az webapp identity show --name {app-name} --resource-group {rg}
+   ```
+
+4. **AZURE_CLIENT_ID Environment Variable**:
+   ```bash
+   az webapp config appsettings list --name {app-name} --resource-group {rg} 
+     --query "[?name=='AZURE_CLIENT_ID']"
+   ```
+
+### RBAC Role vs Access Policy
+
+⚠️ **Both are required!**
+
+- **RBAC Role Assignment** (`Redis Cache Contributor` on database resource):
+  - Grants Azure management plane permissions
+  - Required for the role assignment itself
+  
+- **Access Policy Assignment** (via API):
+  - Grants Redis data plane access
+  - **This is what allows authentication to work!**
+
+Without the access policy, you'll get "invalid username-password pair" even with correct RBAC.
+
+### Access Policy API Differences
+
+Azure Managed Redis vs Azure Cache for Redis have **different APIs**:
+
+| Property | Azure Cache for Redis | Azure Managed Redis |
+|----------|----------------------|---------------------|
+| Access Policy Name | Custom (e.g., "Data Contributor") | Must be "default" |
+| Object structure | `objectId` + `objectIdAlias` (flat) | `user { objectId }` (nested) |
+| Resource path | `/redis/{cache}/accessPolicyAssignments` | `/redisEnterprise/{cluster}/databases/{db}/accessPolicyAssignments` |
+| Bicep/ARM | azurerm_redis_cache_access_policy_assignment | Microsoft.Cache/redisEnterprise/databases/accessPolicyAssignments |
+| Terraform azurerm | Supported | **NOT supported (as of v4.x - Jan 2025)** |
+| Terraform AzAPI | N/A | **Required for Terraform users** |
+
+**Important Note**: While Bicep/ARM and Azure CLI fully support access policy assignments for Azure Managed Redis natively, the HashiCorp `azurerm` Terraform provider does not yet include this resource type. Terraform users must use the `azapi` provider as a workaround.
+
 ---
 
-**Summary:** Entra ID authentication is simpler, more secure, and requires less code than traditional password-based authentication. The `redis-entraid` package handles all token management automatically.
+**Summary:** Entra ID authentication is simpler, more secure, and requires less code than traditional password-based authentication. The `redis-entraid` package handles all token management automatically. Just ensure you have BOTH the RBAC role assignment AND the access policy assignment configured correctly.
+
+```
