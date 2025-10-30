@@ -46,7 +46,7 @@ output "connection_string" {
     "rediss://:%s@%s:10000",
     jsondecode(data.azapi_resource_action.database_keys[0].output).primaryKey,
     jsondecode(data.azapi_resource.cluster_data[0].output).properties.hostName
-  ) : format(
+    ) : format(
     "rediss://:%s@%s:%d",
     azurerm_managed_redis.cluster[0].default_database[0].primary_access_key,
     azurerm_managed_redis.cluster[0].hostname,
@@ -61,7 +61,7 @@ output "connection_string_secondary" {
     "rediss://:%s@%s:10000",
     jsondecode(data.azapi_resource_action.database_keys[0].output).secondaryKey,
     jsondecode(data.azapi_resource.cluster_data[0].output).properties.hostName
-  ) : format(
+    ) : format(
     "rediss://:%s@%s:%d",
     azurerm_managed_redis.cluster[0].default_database[0].secondary_access_key,
     azurerm_managed_redis.cluster[0].hostname,
@@ -105,7 +105,7 @@ output "redis_cli_command" {
   value = var.use_azapi ? format(
     "redis-cli -h %s -p 10000 -a '<primary_key>'",
     jsondecode(data.azapi_resource.cluster_data[0].output).properties.hostName
-  ) : format(
+    ) : format(
     "redis-cli -h %s -p 10000 -a '<primary_key>'",
     azurerm_managed_redis.cluster[0].hostname
   )

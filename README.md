@@ -55,8 +55,8 @@ While the native AzureRM provider now supports Azure Managed Redis, **critical e
 ### Security Features
 - **TLS Encryption**: Minimum TLS 1.2 with encrypted client protocol
 - **Access Keys Control**: Option to disable access keys for Entra ID-only authentication
-- **Managed Identity**: SystemAssigned and UserAssigned identity support (AzureRM)
-- **Customer Managed Keys**: Encryption with your own Key Vault keys (AzureRM)
+- **Managed Identity**: SystemAssigned and UserAssigned identity support (Both providers)
+- **Customer Managed Keys**: Encryption with your own Key Vault keys (Both providers)
 - **Private Endpoints**: VNet integration support
 
 ### Developer Experience
@@ -387,11 +387,11 @@ module "redis" {
   location            = "eastus"
   sku                 = "Balanced_B3"
   
-  # Managed Identity (AzureRM only)
+  # Managed Identity (supported by both providers)
   identity_type = "UserAssigned"
   identity_ids  = [azurerm_user_assigned_identity.redis.id]
   
-  # Customer Managed Key (AzureRM only)
+  # Customer Managed Key (supported by both providers)
   customer_managed_key_enabled      = true
   customer_managed_key_vault_key_id = azurerm_key_vault_key.redis.id
   customer_managed_key_identity_id  = azurerm_user_assigned_identity.keyvault.id
@@ -399,7 +399,8 @@ module "redis" {
   # Disable access keys for Entra ID only
   access_keys_authentication_enabled = false
   
-  use_azapi = false  # Required for Managed Identity and CMK
+  # Works with both AzAPI and AzureRM
+  use_azapi = true  # or false - your choice!
 }
 ```
 
@@ -504,20 +505,21 @@ Use the centralized switch script in any example:
 
 ### When to Use Each Provider
 
-**Use AzAPI when you need:**
-- ✅ RDB or AOF persistence
-- ✅ Geo-replication across regions
-- ✅ Zone redundancy
+**Use AzAPI for maximum feature coverage:**
+- ✅ All features supported (persistence, geo-replication, zones, identity, CMK)
+- ✅ Latest API features immediately available
+- ✅ Clusterless deployments
 - ✅ Defer upgrade control
-- ✅ Latest API features
+- ✅ Recommended for new deployments
 
-**Use AzureRM when you need:**
-- ✅ Managed Identity (SystemAssigned or UserAssigned)
-- ✅ Customer Managed Key (CMK) encryption
-- ✅ Integration with other AzureRM resources
+**Use AzureRM for native Terraform experience:**
+- ✅ Basic features (clustering, HA, modules)
+- ✅ Managed Identity and Customer Managed Keys
 - ✅ Native Terraform resource experience
+- ✅ Good for simpler deployments
+- ❌ Missing: Persistence, Geo-replication, Zones, Clusterless mode
 
-**You can switch anytime** - the module handles the complexity!
+**Best Practice:** Start with AzAPI (`use_azapi = true`) for complete feature coverage. You can switch anytime!
 
 ### �🔐 Authentication Setup only for Github Workflows
 Choose your preferred authentication method:

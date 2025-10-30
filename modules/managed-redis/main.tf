@@ -10,16 +10,41 @@ resource "azapi_resource" "cluster" {
   location  = var.location
   parent_id = local.resource_group_id
 
-  body = {
-    sku = local.sku_config
+  body = merge(
+    {
+      sku = local.sku_config
 
-    properties = {
-      highAvailability  = local.ha_config
-      minimumTlsVersion = var.minimum_tls_version
-    }
+      properties = merge(
+        {
+          highAvailability  = local.ha_config
+          minimumTlsVersion = var.minimum_tls_version
+        },
+        # Customer Managed Key encryption (optional)
+        var.customer_managed_key_enabled ? {
+          encryption = {
+            customerManagedKeyEncryption = {
+              keyEncryptionKeyIdentity = {
+                identityType                   = "userAssignedIdentity"
+                userAssignedIdentityResourceId = var.customer_managed_key_identity_id
+              }
+              keyEncryptionKeyUrl = var.customer_managed_key_vault_key_id
+            }
+          }
+        } : {}
+      )
 
-    zones = local.zones_config
-  }
+      zones = local.zones_config
+    },
+    # Managed Identity (optional)
+    var.identity_type != null ? {
+      identity = {
+        type = var.identity_type
+        userAssignedIdentities = var.identity_type != "SystemAssigned" ? {
+          for id in var.identity_ids : id => {}
+        } : null
+      }
+    } : {}
+  )
 
   tags = local.common_tags
 
@@ -136,9 +161,9 @@ resource "azurerm_managed_redis" "cluster" {
 
   default_database {
     access_keys_authentication_enabled = var.access_keys_authentication_enabled
-    client_protocol                     = var.client_protocol
-    clustering_policy                   = var.clustering_policy
-    eviction_policy                     = var.eviction_policy
+    client_protocol                    = var.client_protocol
+    clustering_policy                  = var.clustering_policy
+    eviction_policy                    = var.eviction_policy
 
     # Enable modules if specified
     dynamic "module" {

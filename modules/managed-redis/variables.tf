@@ -198,9 +198,9 @@ variable "defer_upgrade" {
   }
 }
 
-# AzureRM-only features (not supported in AzAPI yet)
+# Managed Identity and Encryption features (supported by both AzAPI and AzureRM)
 variable "identity_type" {
-  description = "Type of managed identity. Options: null (none), 'SystemAssigned', 'UserAssigned', 'SystemAssigned, UserAssigned'. Only works with AzureRM provider."
+  description = "Type of managed identity. Options: null (none), 'SystemAssigned', 'UserAssigned', 'SystemAssigned, UserAssigned'. Supported by both AzAPI and AzureRM providers."
   type        = string
   default     = null
 
@@ -211,25 +211,25 @@ variable "identity_type" {
 }
 
 variable "identity_ids" {
-  description = "List of User Assigned Managed Identity IDs. Required when identity_type includes 'UserAssigned'. Only works with AzureRM provider."
+  description = "List of User Assigned Managed Identity IDs. Required when identity_type includes 'UserAssigned'. Supported by both AzAPI and AzureRM providers."
   type        = list(string)
   default     = []
 }
 
 variable "customer_managed_key_enabled" {
-  description = "Enable Customer Managed Key (CMK) encryption. Only works with AzureRM provider."
+  description = "Enable Customer Managed Key (CMK) encryption. Supported by both AzAPI and AzureRM providers."
   type        = bool
   default     = false
 }
 
 variable "customer_managed_key_vault_key_id" {
-  description = "The Key Vault Key ID for Customer Managed Key encryption. Only works with AzureRM provider."
+  description = "The Key Vault Key ID for Customer Managed Key encryption. Supported by both AzAPI and AzureRM providers."
   type        = string
   default     = null
 }
 
 variable "customer_managed_key_identity_id" {
-  description = "The User Assigned Identity ID to use for accessing the Customer Managed Key. Only works with AzureRM provider."
+  description = "The User Assigned Identity ID to use for accessing the Customer Managed Key. Supported by both AzAPI and AzureRM providers."
   type        = string
   default     = null
 }
