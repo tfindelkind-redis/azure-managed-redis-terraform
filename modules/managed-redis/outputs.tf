@@ -1,6 +1,6 @@
 output "cluster_id" {
   description = "The ID of the Redis Enterprise cluster"
-  value       = var.use_azapi ? azapi_resource.cluster[0].id : null
+  value       = var.use_azapi ? azapi_resource.cluster[0].id : azurerm_managed_redis.cluster[0].id
 }
 
 output "cluster_name" {
@@ -10,7 +10,7 @@ output "cluster_name" {
 
 output "database_id" {
   description = "The ID of the Redis database"
-  value       = var.use_azapi ? azapi_resource.database[0].id : null
+  value       = var.use_azapi ? azapi_resource.database[0].id : "${azurerm_managed_redis.cluster[0].id}/databases/default"
 }
 
 output "database_name" {
@@ -20,23 +20,23 @@ output "database_name" {
 
 output "hostname" {
   description = "The hostname of the Redis database"
-  value       = var.use_azapi ? jsondecode(data.azapi_resource.cluster_data[0].output).properties.hostName : null
+  value       = var.use_azapi ? jsondecode(data.azapi_resource.cluster_data[0].output).properties.hostName : azurerm_managed_redis.cluster[0].hostname
 }
 
 output "port" {
   description = "The port of the Redis database"
-  value       = 10000
+  value       = var.use_azapi ? 10000 : azurerm_managed_redis.cluster[0].default_database[0].port
 }
 
 output "primary_key" {
   description = "The primary access key for the Redis database"
-  value       = var.use_azapi ? jsondecode(data.azapi_resource_action.database_keys[0].output).primaryKey : null
+  value       = var.use_azapi ? jsondecode(data.azapi_resource_action.database_keys[0].output).primaryKey : azurerm_managed_redis.cluster[0].default_database[0].primary_access_key
   sensitive   = true
 }
 
 output "secondary_key" {
   description = "The secondary access key for the Redis database"
-  value       = var.use_azapi ? jsondecode(data.azapi_resource_action.database_keys[0].output).secondaryKey : null
+  value       = var.use_azapi ? jsondecode(data.azapi_resource_action.database_keys[0].output).secondaryKey : azurerm_managed_redis.cluster[0].default_database[0].secondary_access_key
   sensitive   = true
 }
 
@@ -46,7 +46,12 @@ output "connection_string" {
     "rediss://:%s@%s:10000",
     jsondecode(data.azapi_resource_action.database_keys[0].output).primaryKey,
     jsondecode(data.azapi_resource.cluster_data[0].output).properties.hostName
-  ) : null
+  ) : format(
+    "rediss://:%s@%s:%d",
+    azurerm_managed_redis.cluster[0].default_database[0].primary_access_key,
+    azurerm_managed_redis.cluster[0].hostname,
+    azurerm_managed_redis.cluster[0].default_database[0].port
+  )
   sensitive = true
 }
 
@@ -56,7 +61,12 @@ output "connection_string_secondary" {
     "rediss://:%s@%s:10000",
     jsondecode(data.azapi_resource_action.database_keys[0].output).secondaryKey,
     jsondecode(data.azapi_resource.cluster_data[0].output).properties.hostName
-  ) : null
+  ) : format(
+    "rediss://:%s@%s:%d",
+    azurerm_managed_redis.cluster[0].default_database[0].secondary_access_key,
+    azurerm_managed_redis.cluster[0].hostname,
+    azurerm_managed_redis.cluster[0].default_database[0].port
+  )
   sensitive = true
 }
 
@@ -95,7 +105,10 @@ output "redis_cli_command" {
   value = var.use_azapi ? format(
     "redis-cli -h %s -p 10000 -a '<primary_key>'",
     jsondecode(data.azapi_resource.cluster_data[0].output).properties.hostName
-  ) : null
+  ) : format(
+    "redis-cli -h %s -p 10000 -a '<primary_key>'",
+    azurerm_managed_redis.cluster[0].hostname
+  )
 }
 
 output "test_connection_info" {

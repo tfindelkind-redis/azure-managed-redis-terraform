@@ -1,0 +1,64 @@
+# Python cache and compiled files
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+**/__pycache__/
+.pytest_cache/
+*.egg-info/
+.eggs/
+
+# Virtual environments (all variations)
+venv/
+.venv/
+env/
+.env/
+ENV/
+test-venv/
+virtualenv/
+.virtualenv/
+
+# Environment and config files
+.env
+.env.*
+!.env.example
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Test files (optional - uncomment if you don't want to deploy tests)
+# tests/
+# test_*.py
+# *_test.py
+
+# Build artifacts
+build/
+dist/
+*.egg
+*.whl
+
+# Documentation (optional - uncomment if you don't want to deploy docs)
+# docs/
+# *.md
+# !README.md
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/

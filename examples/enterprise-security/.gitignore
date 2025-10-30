@@ -1,0 +1,34 @@
+# Terraform files
+.terraform/
+.terraform.lock.hcl
+terraform.tfstate
+terraform.tfstate.backup
+tfplan
+*.tfplan
+
+# Variable files (may contain sensitive data)
+terraform.tfvars
+*.auto.tfvars
+
+# Connection details
+connection-details.txt
+
+# Key Files
+*.pem
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+#"Log Files" Folder
+LogFiles/
+
+# Build logs
+build-logs.zip
+
+# OS files
+.DS_Store
+Thumbs.db

@@ -47,267 +47,109 @@ data "azurerm_resource_group" "secondary_existing" {
 # Local values for resource group references
 locals {
   primary_rg_name   = var.create_resource_groups ? azurerm_resource_group.primary[0].name : data.azurerm_resource_group.primary_existing[0].name
-  primary_rg_id     = var.create_resource_groups ? azurerm_resource_group.primary[0].id : data.azurerm_resource_group.primary_existing[0].id
+  primary_location  = var.create_resource_groups ? azurerm_resource_group.primary[0].location : data.azurerm_resource_group.primary_existing[0].location
   secondary_rg_name = var.create_resource_groups ? azurerm_resource_group.secondary[0].name : data.azurerm_resource_group.secondary_existing[0].name
-  secondary_rg_id   = var.create_resource_groups ? azurerm_resource_group.secondary[0].id : data.azurerm_resource_group.secondary_existing[0].id
+  secondary_location = var.create_resource_groups ? azurerm_resource_group.secondary[0].location : data.azurerm_resource_group.secondary_existing[0].location
 }
 
-# Primary Redis Enterprise cluster
-resource "azapi_resource" "primary_cluster" {
-  type      = "Microsoft.Cache/redisEnterprise@2025-05-01-preview"
-  name      = "${var.project_name}-primary"
-  location  = var.primary_location
-  parent_id = local.primary_rg_id
+# Primary Redis Enterprise cluster using module
+module "redis_primary" {
+  source = "../../modules/managed-redis"
 
-  body = {
-    sku = {
-      name = var.redis_sku
-    }
+  name                = "${var.project_name}-primary"
+  resource_group_name = local.primary_rg_name
+  location            = local.primary_location
 
-    properties = {
-      highAvailability  = "Enabled"
-      minimumTlsVersion = "1.2"
-    }
-  }
+  sku               = var.redis_sku
+  high_availability = true
+  minimum_tls_version = "1.2"
+
+  # Database configuration
+  client_protocol     = "Encrypted"
+  eviction_policy     = "NoEviction"
+  clustering_policy   = "EnterpriseCluster"
+
+  # Redis modules
+  modules = ["RedisJSON", "RediSearch"]
+
+  # Geo-replication disabled initially - will be configured after secondary is created
+  geo_replication_enabled = false
+
+  # Persistence disabled for geo-replication
+  persistence_aof_enabled = false
+  persistence_rdb_enabled = false
+
+  # Access keys authentication must be enabled
+  access_keys_authentication_enabled = true
+  defer_upgrade = "NotDeferred"
+
+  # Use AzAPI provider
+  use_azapi = true
 
   tags = {
     Environment = var.environment
     Region      = "primary"
     Role        = "primary-redis"
     Criticality = "high"
-    managed-by  = "terraform"
   }
 
-  schema_validation_enabled = false
-
-  timeouts {
-    create = "30m"
-    update = "30m"
-    delete = "30m"
-  }
+  depends_on = [
+    azurerm_resource_group.primary,
+    data.azurerm_resource_group.primary_existing
+  ]
 }
 
-# Primary database with geo-replication configuration
-resource "azapi_resource" "primary_database" {
-  type      = "Microsoft.Cache/redisEnterprise/databases@2025-05-01-preview"
-  name      = "default"
-  parent_id = azapi_resource.primary_cluster.id
+# Secondary Redis Enterprise cluster using module
+module "redis_secondary" {
+  source = "../../modules/managed-redis"
 
-  body = {
-    properties = {
-      clientProtocol   = "Encrypted"
-      evictionPolicy   = "NoEviction"
-      clusteringPolicy = "EnterpriseCluster"
+  name                = "${var.project_name}-secondary"
+  resource_group_name = local.secondary_rg_name
+  location            = local.secondary_location
 
-      modules = [
-        {
-          name = "RedisJSON"
-        },
-        {
-          name = "RediSearch"
-        }
-      ]
+  sku               = var.redis_sku
+  high_availability = true
+  minimum_tls_version = "1.2"
 
-      # Required properties for API version 2025-05-01-preview
-      deferUpgrade             = "NotDeferred"
-      accessKeysAuthentication = "Enabled"
+  # Database configuration
+  client_protocol     = "Encrypted"
+  eviction_policy     = "NoEviction"
+  clustering_policy   = "EnterpriseCluster"
 
-      persistence = {
-        aofEnabled = false
-        rdbEnabled = false
-      }
+  # Redis modules (must match primary)
+  modules = ["RedisJSON", "RediSearch"]
 
-      # Geo-replication configuration - primary only includes itself initially
-      geoReplication = {
-        groupNickname = var.geo_replication_group_name
-        linkedDatabases = [
-          {
-            id = "${azapi_resource.primary_cluster.id}/databases/default"
-          }
-        ]
-      }
-    }
-  }
+  # Geo-replication configuration - includes both databases
+  # This establishes the link after both clusters exist
+  # Note: The secondary database ID will be added through terraform output after initial creation
+  geo_replication_enabled         = var.enable_geo_replication_linking
+  geo_replication_group_nickname  = var.geo_replication_group_name
+  geo_replication_linked_database_ids = var.enable_geo_replication_linking ? [
+    module.redis_primary.database_id
+  ] : []
 
-  schema_validation_enabled = false
+  # Persistence disabled for geo-replication
+  persistence_aof_enabled = false
+  persistence_rdb_enabled = false
 
-  depends_on = [azapi_resource.primary_cluster]
+  # Access keys authentication must be enabled
+  access_keys_authentication_enabled = true
+  defer_upgrade = "NotDeferred"
 
-  timeouts {
-    create = "30m"
-    update = "30m"
-    delete = "30m"
-  }
-}
-
-# Secondary Redis Enterprise cluster (cluster only, database created separately for geo-replication)
-resource "azapi_resource" "secondary_cluster" {
-  type      = "Microsoft.Cache/redisEnterprise@2025-05-01-preview"
-  name      = "${var.project_name}-secondary"
-  location  = var.secondary_location
-  parent_id = local.secondary_rg_id
-
-  body = {
-    sku = {
-      name = var.redis_sku
-    }
-
-    properties = {
-      highAvailability  = "Enabled"
-      minimumTlsVersion = "1.2"
-    }
-
-    zones = null
-  }
+  # Use AzAPI provider
+  use_azapi = true
 
   tags = {
     Environment  = var.environment
     Region       = "secondary"
     Role         = "secondary-redis"
     Criticality  = "high"
-    "managed-by" = "terraform"
   }
 
-  schema_validation_enabled = false
-
-  # Ensure primary is fully created first
-  depends_on = [azapi_resource.primary_database]
-
-  timeouts {
-    create = "30m"
-    update = "30m"
-    delete = "30m"
-  }
-}
-
-# Secondary database with geo-replication configuration
-resource "azapi_resource" "secondary_database" {
-  type      = "Microsoft.Cache/redisEnterprise/databases@2025-05-01-preview"
-  name      = "default"
-  parent_id = azapi_resource.secondary_cluster.id
-
-  body = {
-    properties = {
-      clientProtocol   = "Encrypted"
-      evictionPolicy   = "NoEviction"
-      clusteringPolicy = "EnterpriseCluster"
-
-      modules = [
-        {
-          name = "RedisJSON"
-        },
-        {
-          name = "RediSearch"
-        }
-      ]
-
-      # Required properties for API version 2025-05-01-preview
-      deferUpgrade             = "NotDeferred"
-      accessKeysAuthentication = "Enabled"
-
-      persistence = {
-        aofEnabled = false
-        rdbEnabled = false
-      }
-
-      # Geo-replication configuration
-      geoReplication = {
-        groupNickname = var.geo_replication_group_name
-        linkedDatabases = [
-          {
-            id = azapi_resource.primary_database.id
-          },
-          {
-            id = "${azapi_resource.secondary_cluster.id}/databases/default"
-          }
-        ]
-      }
-    }
-  }
-
-  schema_validation_enabled = false
-
-  # Wait for both clusters and primary database to be ready
+  # Wait for primary to be ready
   depends_on = [
-    azapi_resource.primary_database,
-    azapi_resource.secondary_cluster
+    module.redis_primary,
+    azurerm_resource_group.secondary,
+    data.azurerm_resource_group.secondary_existing
   ]
-
-  timeouts {
-    create = "30m"
-    update = "30m"
-    delete = "30m"
-  }
 }
-
-# Data source to read primary cluster properties
-data "azapi_resource" "primary_cluster_data" {
-  type                   = "Microsoft.Cache/redisEnterprise@2025-05-01-preview"
-  resource_id            = azapi_resource.primary_cluster.id
-  response_export_values = ["properties"]
-
-  depends_on = [azapi_resource.primary_cluster]
-}
-
-# Retrieve primary database access keys
-data "azapi_resource_action" "primary_database_keys" {
-  type        = "Microsoft.Cache/redisEnterprise/databases@2025-05-01-preview"
-  resource_id = azapi_resource.primary_database.id
-  action      = "listKeys"
-  method      = "POST"
-
-  response_export_values = ["primaryKey", "secondaryKey"]
-
-  depends_on = [azapi_resource.primary_database]
-}
-
-# Data source to read secondary cluster properties
-data "azapi_resource" "secondary_cluster_data" {
-  type                   = "Microsoft.Cache/redisEnterprise@2025-05-01-preview"
-  resource_id            = azapi_resource.secondary_cluster.id
-  response_export_values = ["properties"]
-
-  depends_on = [azapi_resource.secondary_cluster]
-}
-
-# Retrieve secondary database access keys
-data "azapi_resource_action" "secondary_database_keys" {
-  type        = "Microsoft.Cache/redisEnterprise/databases@2025-05-01-preview"
-  resource_id = azapi_resource.secondary_database.id
-  action      = "listKeys"
-  method      = "POST"
-
-  response_export_values = ["primaryKey", "secondaryKey"]
-
-  depends_on = [azapi_resource.secondary_database]
-}
-
-# Traffic Manager profile for global load balancing (future enhancement)
-# Note: This is a placeholder for when Azure Managed Redis supports Traffic Manager integration
-/*
-resource "azurerm_traffic_manager_profile" "redis" {
-  name                = "${var.project_name}-traffic-manager"
-  resource_group_name = azurerm_resource_group.primary.name
-
-  traffic_routing_method = "Priority"
-
-  dns_config {
-    relative_name = "${var.project_name}-redis"
-    ttl          = 100
-  }
-
-  monitor_config {
-    protocol                    = "TCP"
-    port                       = 10000
-    path                       = ""
-    interval_in_seconds        = 30
-    timeout_in_seconds         = 10
-    tolerated_number_of_failures = 3
-  }
-
-  tags = {
-    Environment = var.environment
-    Purpose     = "redis-load-balancing"
-  }
-}
-*/

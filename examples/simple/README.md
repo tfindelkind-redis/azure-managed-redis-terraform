@@ -2,6 +2,22 @@
 
 This example demonstrates the minimal configuration required to deploy Azure Managed Redis using this module.
 
+## Provider Support
+
+This example supports **both AzAPI and AzureRM providers**. You can easily switch between them:
+
+- **AzureRM** (default, recommended): Native Terraform support with `azurerm_managed_redis`
+- **AzAPI**: Direct Azure ARM API access for preview features
+
+**Switch providers easily:**
+```bash
+./switch-provider.sh to-azurerm  # Switch to native AzureRM
+./switch-provider.sh to-azapi    # Switch to AzAPI
+./switch-provider.sh status      # Check current provider
+```
+
+See [PROVIDER-SWITCHING.md](./PROVIDER-SWITCHING.md) for detailed documentation.
+
 ## Configuration
 
 - **Cluster**: Balanced_B0 SKU (minimal cost)
@@ -9,6 +25,7 @@ This example demonstrates the minimal configuration required to deploy Azure Man
 - **Modules**: None (basic Redis functionality only)
 - **High Availability**: Disabled (for cost optimization)
 - **TLS**: Version 1.2 (secure default)
+- **Provider**: AzureRM by default (set `use_azapi = false`)
 
 ## Usage
 

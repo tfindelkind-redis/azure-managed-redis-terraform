@@ -1,0 +1,25 @@
+# Example Terraform variables for Enterprise Security deployment
+
+resource_group_name = "rg-redis-enterprise-security"
+location            = "northeurope"
+redis_name          = "redis-enterprise-secure"
+environment         = "production"
+
+# Redis Configuration
+sku_name            = "Enterprise_E10"  # Minimum for Customer Managed Keys
+zones               = ["1", "2", "3"]   # High Availability across 3 zones
+minimum_tls_version = "1.2"
+enable_modules      = true              # Enable RedisJSON and RediSearch
+
+# Network Configuration
+vnet_address_space  = ["10.0.0.0/16"]
+redis_subnet_prefix = ["10.0.1.0/24"]
+
+# Tags
+tags = {
+  "Example"     = "enterprise-security"
+  "Managed-By"  = "terraform"
+  "Environment" = "production"
+  "Security"    = "enhanced"
+  "CostCenter"  = "engineering"
+}
