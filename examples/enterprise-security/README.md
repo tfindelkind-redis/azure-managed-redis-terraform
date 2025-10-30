@@ -2,6 +2,12 @@
 
 This example demonstrates Azure Managed Redis (Redis Enterprise) with **full enterprise-grade security features** using the **module with flexible provider support**.
 
+## 🎨 Demo Application
+
+This example includes a **Python test application** deployed to Azure App Service that demonstrates Entra ID authentication with Redis:
+
+![Enterprise Security Test App](img/testapp.png)
+
 > **✅ Provider Flexibility**: 
 > - **Redis cluster/database**: Supports both AzureRM and AzAPI providers (configured via `use_azapi` variable)
 > - **Access policy assignments**: Require AzAPI for Terraform users (azurerm doesn't support this resource type yet)

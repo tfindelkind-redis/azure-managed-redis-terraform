@@ -20,6 +20,7 @@ While the native AzureRM provider now supports Azure Managed Redis, **critical e
 | **Clusterless Mode** | ❌ Not supported | ✅ Fully supported | Single-shard deployments, cost optimization |
 | **RDB Persistence** | ❌ Not supported | ✅ Fully supported | Point-in-time backup & recovery |
 | **AOF Persistence** | ❌ Not supported | ✅ Fully supported | Maximum data durability |
+| **Access Policy Assignments** | ❌ Not supported | ✅ Fully supported | Entra ID authentication & authorization |
 | **Managed Identity** | ✅ Supported | ✅ Fully supported | Secure authentication without passwords |
 | **Customer Managed Keys** | ✅ Supported | ✅ Fully supported | Encryption with your own keys |
 
