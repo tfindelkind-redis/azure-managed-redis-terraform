@@ -11,14 +11,37 @@ A Terraform module for deploying Azure Managed Redis (Redis Enterprise) with sea
 
 ## ⭐ Features
 
+### Core Features
 - **Azure Managed Redis**: Fully managed Redis Enterprise cluster with high performance
+- **Dual Provider Support**: Seamlessly switch between AzAPI and AzureRM providers
 - **Stable API**: Uses Azure Redis Enterprise API version `2025-05-01-preview` (proven stable)
 - **Extended SKU Options**: Support for 40+ SKUs including Balanced, Flash-Optimized, Memory/Compute variants
-- **Future-Proof**: Built with AzAPI provider, ready for azurerm migration
 - **Redis Modules**: Support for RedisJSON, RediSearch, RedisBloom, RedisTimeSeries
-- **Configurable**: High availability, security, and monitoring options
-- **CI/CD Ready**: GitHub Actions workflows for automated validation and deployment
-- **Geo-Replication**: Support for active geo-replication across regions
+
+### Deployment Options
+- **Clusterless Deployment**: Single-shard deployment with `EnterpriseCluster` policy
+- **Clustered Deployment**: Multi-shard deployment with `OSSCluster` policy
+- **High Availability**: Active-passive replication with automatic failover
+- **Zone Redundancy**: Deploy across availability zones (AzAPI only)
+- **Geo-Replication**: Active geo-replication across regions (AzAPI only)
+
+### Data Persistence
+- **RDB Persistence**: Point-in-time snapshots for backup and recovery (AzAPI only)
+- **AOF Persistence**: Append-only file for maximum durability (AzAPI only)
+- **Combined RDB + AOF**: Best of both worlds for optimal protection (AzAPI only)
+
+### Security Features
+- **TLS Encryption**: Minimum TLS 1.2 with encrypted client protocol
+- **Access Keys Control**: Option to disable access keys for Entra ID-only authentication
+- **Managed Identity**: SystemAssigned and UserAssigned identity support (AzureRM only)
+- **Customer Managed Keys**: Encryption with your own Key Vault keys (AzureRM only)
+- **Private Endpoints**: VNet integration support
+
+### Developer Experience
+- **Centralized Switch Script**: One command to switch between providers across all examples
+- **Automated Testing**: Comprehensive test suite validates all examples
+- **CI/CD Ready**: GitHub Actions workflows for automated validation
+- **Future-Proof**: Ready for native azurerm provider migration
 
 ## 🏗️ Architecture
 
@@ -31,12 +54,51 @@ Azure Managed Redis consists of:
 
 ## 📚 Examples
 
-| 📁 Example                                         | 📝 Description             | 🎯 Use Case                |
-|----------------------------------------------------|----------------------------|----------------------------|
-| [Simple](examples/simple/)                         | Basic deployment           | Development & testing      |
-| [With Modules](examples/with-modules/)             | Redis modules showcase     | Feature exploration        |
-| [High Availability](examples/high-availability/)   | HA configuration           | High-availability apps     |
-| [Geo-Replication](examples/geo-replication/)       | Global deployment          | Worldwide applications     |
+All examples include a centralized switch script for seamless provider switching.
+
+| 📁 Example | 📝 Description | 🎯 Use Case | 🔧 Features |
+|-----------|----------------|-------------|-------------|
+| [Simple](examples/simple/) | Basic deployment | Development & testing | Module-based, provider switching |
+| [High Availability](examples/high-availability/) | HA configuration | Production apps | Active-passive replication, zones |
+| [With Modules](examples/with-modules/) | Redis modules showcase | Feature exploration | RedisJSON, RediSearch, etc. |
+| [Geo-Replication](examples/geo-replication/) | Multi-region deployment | Global applications | Active geo-replication (AzAPI) |
+| [Clusterless + Persistence](examples/clusterless-with-persistence/) | Single-shard with persistence | Durable workloads | RDB + AOF persistence (AzAPI) |
+| [Enterprise Security](examples/enterprise-security/) | Advanced security | Secure production | CMK, Managed Identity, Entra ID |
+
+### 🔄 Provider Switching
+
+Every example includes a centralized switch script:
+
+```bash
+# Switch to AzureRM provider
+./switch-provider.sh to-azurerm
+
+# Switch to AzAPI provider  
+./switch-provider.sh to-azapi
+
+# Check current provider status
+./switch-provider.sh status
+```
+
+The script automatically:
+- ✅ Updates configuration files
+- ✅ Migrates Terraform state (if resources are deployed)
+- ✅ Creates backups before changes
+- ✅ Validates the configuration
+
+### 🧪 Test All Examples
+
+Run comprehensive tests across all examples:
+
+```bash
+# From repository root
+./test-all-examples.sh
+```
+
+This validates:
+- Provider switching in both directions
+- Configuration validity
+- Module integration
 
 ## �📦 Quick Start
 
@@ -187,11 +249,113 @@ terraform apply
 
 ## 🔧 Requirements
 
-| 📦 Component                                                                                                | 📋 Version    |
-|-------------------------------------------------------------------------------------------------------------|---------------|
-| [Terraform](https://www.terraform.io/)                                                                      | `>= 1.3`      |
-| [AzAPI Provider](https://registry.terraform.io/providers/Azure/azapi/latest)                                | `~> 1.15`     |
-| [AzureRM Provider](https://registry.terraform.io/providers/hashicorp/azurerm/latest)                        | `~> 3.80`     |
+| 📦 Component | 📋 Version |
+|-------------|-----------|
+| [Terraform](https://www.terraform.io/) | `>= 1.3` |
+| [AzAPI Provider](https://registry.terraform.io/providers/Azure/azapi/latest) | `~> 1.15` |
+| [AzureRM Provider](https://registry.terraform.io/providers/hashicorp/azurerm/latest) | `~> 4.50` |
+
+## 📖 Module Documentation
+
+### Feature Support Matrix
+
+For a comprehensive overview of all supported features, see [FEATURE-SUPPORT.md](FEATURE-SUPPORT.md).
+
+**Quick Reference:**
+
+| Feature | AzAPI | AzureRM |
+|---------|-------|---------|
+| Clusterless Deployment | ✅ | ✅ |
+| Clustered Deployment | ✅ | ✅ |
+| High Availability | ✅ | ✅ |
+| RDB Persistence | ✅ | ❌ |
+| AOF Persistence | ✅ | ❌ |
+| Zone Redundancy | ✅ | ❌ |
+| Geo-Replication | ✅ | ❌ |
+| Managed Identity | ❌ | ✅ |
+| Customer Managed Keys | ❌ | ✅ |
+
+### Common Use Cases
+
+#### Clusterless Deployment with Persistence
+```hcl
+module "redis" {
+  source = "./modules/managed-redis"
+  
+  name                = "my-redis"
+  resource_group_name = "my-rg"
+  location            = "eastus"
+  sku                 = "Balanced_B3"
+  
+  # Clusterless configuration
+  clustering_policy = "EnterpriseCluster"
+  
+  # Persistence (requires AzAPI)
+  persistence_rdb_enabled = true
+  persistence_aof_enabled = true
+  
+  use_azapi = true
+}
+```
+
+#### Enterprise Security with CMK
+```hcl
+module "redis" {
+  source = "./modules/managed-redis"
+  
+  name                = "my-redis"
+  resource_group_name = "my-rg"
+  location            = "eastus"
+  sku                 = "Balanced_B3"
+  
+  # Managed Identity (requires AzureRM)
+  identity_type = "UserAssigned"
+  identity_ids  = [azurerm_user_assigned_identity.redis.id]
+  
+  # Customer Managed Key
+  customer_managed_key_enabled      = true
+  customer_managed_key_vault_key_id = azurerm_key_vault_key.redis.id
+  customer_managed_key_identity_id  = azurerm_user_assigned_identity.keyvault.id
+  
+  # Disable access keys for Entra ID only
+  access_keys_authentication_enabled = false
+  
+  use_azapi = false
+}
+```
+
+#### Geo-Replication
+```hcl
+# Primary region
+module "redis_primary" {
+  source = "./modules/managed-redis"
+  
+  name                = "redis-east"
+  resource_group_name = "my-rg"
+  location            = "eastus"
+  sku                 = "Balanced_B3"
+  
+  geo_replication_enabled        = true
+  geo_replication_group_nickname = "my-geo-group"
+  
+  use_azapi = true  # Required for geo-replication
+}
+
+# Secondary region
+module "redis_west" {
+  source = "./modules/managed-redis"
+  
+  name                = "redis-west"
+  resource_group_name = "my-rg"
+  location            = "westus"
+  sku                 = "Balanced_B3"
+  
+  geo_replication_enabled        = true
+  geo_replication_group_nickname = "my-geo-group"
+  
+  use_azapi = true
+}
+```
 
 ## 🔐 Security Best Practices
 
@@ -208,25 +372,61 @@ terraform apply
 
 ## 🔄 Migration Path
 
-This module is designed for seamless migration from AzAPI to native azurerm:
+This module supports **both AzAPI and AzureRM providers** with seamless switching:
 
-### Today (AzAPI)
+### Current State: Dual Provider Support
+
 ```hcl
 module "redis" {
   source = "./modules/managed-redis"
-  use_azapi = true  # Current default
-  # ... configuration
+  
+  # Choose your provider
+  use_azapi = true   # Use AzAPI for advanced features (persistence, geo-replication, zones)
+  # OR
+  use_azapi = false  # Use AzureRM for enterprise security (managed identity, CMK)
+  
+  # ... rest of configuration stays the same!
 }
 ```
 
-### Tomorrow (Native)
-```hcl  
-module "redis" {
-  source = "./modules/managed-redis"
-  use_azapi = false  # Switch when azurerm supports it
-  # ... same configuration - no changes needed!
-}
+### Switching Providers
+
+Use the centralized switch script in any example:
+
+```bash
+# Switch from AzAPI to AzureRM
+./switch-provider.sh to-azurerm
+
+# Switch from AzureRM to AzAPI
+./switch-provider.sh to-azapi
+
+# Check current status
+./switch-provider.sh status
 ```
+
+**What the script does:**
+1. ✅ Updates configuration files (main.tf or terraform.tfvars)
+2. ✅ Migrates Terraform state if resources are deployed
+3. ✅ Creates automatic backups before changes
+4. ✅ Validates configuration after switching
+5. ✅ Handles both config-only and deployed resource scenarios
+
+### When to Use Each Provider
+
+**Use AzAPI when you need:**
+- ✅ RDB or AOF persistence
+- ✅ Geo-replication across regions
+- ✅ Zone redundancy
+- ✅ Defer upgrade control
+- ✅ Latest API features
+
+**Use AzureRM when you need:**
+- ✅ Managed Identity (SystemAssigned or UserAssigned)
+- ✅ Customer Managed Key (CMK) encryption
+- ✅ Integration with other AzureRM resources
+- ✅ Native Terraform resource experience
+
+**You can switch anytime** - the module handles the complexity!
 
 ### �🔐 Authentication Setup only for Github Workflows
 Choose your preferred authentication method:
@@ -245,14 +445,50 @@ This repository stays current automatically:
 - **Renovate Bot**: Updates provider versions  
 - **CI Matrix**: Validates across provider versions
 - **Auto-Issues**: Creates issues for API version drift
+- **Comprehensive Testing**: All examples tested automatically with provider switching
+
+### Continuous Integration
+
+The repository includes automated testing:
+
+```bash
+# Test all examples with provider switching
+./test-all-examples.sh
+```
+
+This script:
+1. ✅ Tests each example's switch script status command
+2. ✅ Switches to opposite provider
+3. ✅ Verifies configuration was updated correctly
+4. ✅ Switches back to original provider
+5. ✅ Validates Terraform configuration
+6. ✅ Reports comprehensive test results
+
+All 6 examples are tested automatically in CI/CD pipelines.
 
 ## 📖 Additional Resources
 
+### Documentation
+- [Feature Support Matrix](FEATURE-SUPPORT.md) - Comprehensive feature documentation
 - [Azure Managed Redis Documentation](https://docs.microsoft.com/en-us/azure/azure-cache-for-redis/cache-redis-enterprise-overview)
 - [Redis Enterprise Cloud](https://redis.com/redis-enterprise-cloud/)
 - [Terraform AzAPI Provider](https://registry.terraform.io/providers/Azure/azapi/latest/docs)
-- [Migration Guide](docs/MIGRATION.md)
-- [Troubleshooting Guide](docs/TROUBLESHOOTING.md)
+- [Terraform AzureRM Provider](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs)
+
+### Module Features
+- **Persistence**: RDB snapshots and AOF logging for data durability
+- **Clustering**: Support for both clusterless (EnterpriseCluster) and clustered (OSSCluster) deployments
+- **Security**: TLS encryption, access key control, managed identities, and customer-managed keys
+- **High Availability**: Active-passive replication, zone redundancy, and geo-replication
+- **Flexibility**: Switch between AzAPI and AzureRM providers as needed
+
+### Examples Documentation
+Each example includes detailed README with:
+- Architecture diagrams
+- Feature explanations
+- Deployment instructions
+- Testing procedures
+- Provider switching guidance
 
 ## 📄 License
 

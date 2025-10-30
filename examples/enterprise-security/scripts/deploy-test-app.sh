@@ -42,28 +42,46 @@ echo -e "${GREEN}✓ Resource Group: $RESOURCE_GROUP${NC}"
 echo ""
 
 # Go back to app directory
-cd redis-test-app
+cd testing-app
 
 # Create deployment package
-echo -e "${YELLOW}Creating deployment package...${NC}"
+echo -e "${YELLOW}Creating clean deployment package...${NC}"
 ZIP_FILE="../redis-test-app.zip"
 
 # Remove old zip if exists
 rm -f "$ZIP_FILE"
 
-# Create zip (exclude unnecessary files)
+# Create zip excluding ALL virtual environments and cache files
+# This ensures a clean build every time
 zip -r "$ZIP_FILE" . \
     -x "*.pyc" \
+    -x "**/__pycache__/*" \
     -x "__pycache__/*" \
-    -x ".env" \
+    -x ".pytest_cache/*" \
+    -x "*.egg-info/*" \
+    -x ".env*" \
     -x ".git/*" \
     -x "*.log" \
     -x ".DS_Store" \
     -x "venv/*" \
     -x ".venv/*" \
-    > /dev/null
+    -x "test-venv/*" \
+    -x "env/*" \
+    -x ".env/*" \
+    > /dev/null 2>&1
 
-echo -e "${GREEN}✓ Deployment package created: $ZIP_FILE${NC}"
+# Verify the package size (should be small, ~15-20KB)
+PKG_SIZE=$(ls -lh "$ZIP_FILE" | awk '{print $5}')
+echo -e "${GREEN}✓ Clean deployment package created: $ZIP_FILE ($PKG_SIZE)${NC}"
+
+# Warn if package is too large (might contain venv)
+if [ -f "$ZIP_FILE" ]; then
+    SIZE_BYTES=$(stat -f%z "$ZIP_FILE" 2>/dev/null || stat -c%s "$ZIP_FILE" 2>/dev/null)
+    if [ "$SIZE_BYTES" -gt 100000 ]; then
+        echo -e "${YELLOW}⚠️  Warning: Package size is ${PKG_SIZE}, which seems large${NC}"
+        echo -e "${YELLOW}   Make sure virtual environments are excluded${NC}"
+    fi
+fi
 echo ""
 
 # Deploy to App Service
@@ -71,59 +89,24 @@ echo -e "${YELLOW}Deploying to Azure App Service...${NC}"
 echo -e "${BLUE}This may take a few minutes...${NC}"
 echo ""
 
-az webapp deployment source config-zip \
+# Use the newer az webapp deploy command instead of deprecated config-zip
+az webapp deploy \
     --resource-group "$RESOURCE_GROUP" \
     --name "$APP_NAME" \
-    --src "$ZIP_FILE" \
-    --timeout 600
+    --src-path "$ZIP_FILE" \
+    --type zip \
+    --clean true \
+    --restart true \
+    --async false
 
 echo ""
 echo -e "${GREEN}✓ Deployment completed successfully!${NC}"
 echo ""
 
-# Update Redis password in Key Vault (if Redis is deployed)
-echo -e "${YELLOW}Checking if Redis is deployed...${NC}"
-REDIS_NAME=$(cd .. && terraform output -raw cluster_name 2>/dev/null)
-
-if [ -n "$REDIS_NAME" ]; then
-    echo -e "${GREEN}✓ Redis found: $REDIS_NAME${NC}"
-    echo -e "${YELLOW}Updating Redis password in Key Vault...${NC}"
-    
-    # Get Redis password
-    REDIS_PASSWORD=$(az redisenterprise database list-keys \
-        --cluster-name "$REDIS_NAME" \
-        --resource-group "$RESOURCE_GROUP" \
-        --query primaryKey -o tsv 2>/dev/null)
-    
-    if [ -n "$REDIS_PASSWORD" ]; then
-        # Get Key Vault name
-        KEY_VAULT_NAME=$(cd .. && terraform output -json key_vault_id | jq -r 'split("/") | .[-1]')
-        
-        # Update secret
-        az keyvault secret set \
-            --vault-name "$KEY_VAULT_NAME" \
-            --name "redis-password" \
-            --value "$REDIS_PASSWORD" \
-            --output none
-        
-        echo -e "${GREEN}✓ Redis password updated in Key Vault${NC}"
-    else
-        echo -e "${YELLOW}⚠️  Could not retrieve Redis password${NC}"
-    fi
-else
-    echo -e "${YELLOW}⚠️  Redis not deployed yet - password will need to be updated manually${NC}"
-fi
-
-echo ""
-
-# Restart App Service to pick up new settings
-echo -e "${YELLOW}Restarting App Service...${NC}"
-az webapp restart \
-    --resource-group "$RESOURCE_GROUP" \
-    --name "$APP_NAME" \
-    --output none
-
-echo -e "${GREEN}✓ App Service restarted${NC}"
+# Note: Redis is using Entra ID authentication (access keys disabled)
+# No password needed - the App Service uses managed identity
+echo -e "${YELLOW}ℹ️  Redis is configured with Entra ID authentication${NC}"
+echo -e "${YELLOW}   App Service will authenticate using managed identity${NC}"
 echo ""
 
 # Get App Service URL

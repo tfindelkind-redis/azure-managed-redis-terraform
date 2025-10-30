@@ -4,13 +4,13 @@
 # to be enabled OR using the management API to get connection credentials
 
 resource "azurerm_role_assignment" "redis_contributor" {
-  scope                = azurerm_managed_redis.main.id
+  scope                = module.redis_enterprise.cluster_id
   role_definition_name = "Redis Cache Contributor"
   principal_id         = azurerm_user_assigned_identity.redis.principal_id
   principal_type       = "ServicePrincipal"
 
   depends_on = [
-    azurerm_managed_redis.main,
+    module.redis_enterprise,
     azurerm_user_assigned_identity.redis
   ]
 }

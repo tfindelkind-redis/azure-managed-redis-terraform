@@ -1,0 +1,19 @@
+# Azure Configuration
+subscription_id     = "04a9ce47-b2fd-4461-a841-787c6192ceb8"
+resource_group_name = "rg-redis-clusterless-persistence"
+location            = "eastus"
+
+# Redis Configuration
+redis_name = "redis-clusterless"
+sku_name   = "Balanced_B3" # Minimum for persistence features
+
+# Provider Selection
+use_azapi = true # REQUIRED for persistence features
+
+# Tags
+tags = {
+  Example     = "clusterless-with-persistence"
+  ManagedBy   = "Terraform"
+  Environment = "Development"
+  Feature     = "RDB-AOF-Persistence"
+}

@@ -51,3 +51,15 @@ variable "geo_replication_group_name" {
   type        = string
   default     = "azure-managed-redis-geo-group"
 }
+
+variable "use_azapi" {
+  description = "Use AzAPI provider instead of AzureRM"
+  type        = bool
+  default     = true
+}
+
+variable "enable_geo_replication_linking" {
+  description = "Enable geo-replication linking between clusters. Set to false for initial deployment, then true to establish replication."
+  type        = bool
+  default     = false
+}

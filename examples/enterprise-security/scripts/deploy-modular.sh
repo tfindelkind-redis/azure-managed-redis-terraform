@@ -328,21 +328,31 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
         # Change to app directory
         cd testing-app
         
-        # Create deployment package
+        # Create clean deployment package
         ZIP_FILE="../redis-test-app.zip"
         rm -f "$ZIP_FILE"
         
-        echo -e "${YELLOW}Creating deployment package...${NC}"
+        echo -e "${YELLOW}Creating clean deployment package...${NC}"
         zip -r "$ZIP_FILE" . \
             -x "*.pyc" \
+            -x "**/__pycache__/*" \
             -x "__pycache__/*" \
-            -x ".env" \
+            -x ".pytest_cache/*" \
+            -x "*.egg-info/*" \
+            -x ".env*" \
             -x ".git/*" \
             -x "*.log" \
             -x ".DS_Store" \
             -x "venv/*" \
             -x ".venv/*" \
+            -x "test-venv/*" \
+            -x "env/*" \
+            -x ".env/*" \
             > /dev/null 2>&1
+        
+        # Verify package size
+        PKG_SIZE=$(ls -lh "$ZIP_FILE" | awk '{print $5}')
+        echo -e "${GREEN}✓ Clean package created: $PKG_SIZE${NC}"
         
         # Go back to terraform directory
         cd ..

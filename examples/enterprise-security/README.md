@@ -185,6 +185,19 @@ terraform apply
 
 ## 🔧 Configuration
 
+### Provider Support
+
+This example currently uses the **AzureRM provider** exclusively. While other examples in this repository support switching between AzureRM and AzAPI providers using the `use_azapi` variable, this example is optimized for AzureRM.
+
+**Why AzureRM?**
+- The `azurerm_managed_redis` resource (introduced in v4.50+) now fully supports all enterprise security features
+- All features demonstrated in this example (CMK, Private Link, Managed Identity, Access Policies) work identically in both providers
+- The AzureRM provider is the officially recommended approach for Managed Redis
+- Simpler implementation and better community support
+
+**Future AzAPI Support**
+If you need AzAPI provider support for this example, please see [AZAPI_SUPPORT_PLAN.md](./AZAPI_SUPPORT_PLAN.md) for implementation options and migration paths.
+
 ### Key Variables
 
 | Variable | Description | Default | Required |
@@ -198,6 +211,7 @@ terraform apply
 | `enable_modules` | Enable Redis modules | `true` | No |
 | `vnet_address_space` | VNet address space | `["10.0.0.0/16"]` | No |
 | `redis_subnet_prefix` | Subnet address prefix | `["10.0.1.0/24"]` | No |
+| `use_azapi` | Use AzAPI provider | `false` | No (currently not implemented) |
 
 ### Example Configuration
 

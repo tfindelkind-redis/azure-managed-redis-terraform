@@ -60,7 +60,7 @@ resource "azurerm_private_endpoint" "redis" {
 
   private_service_connection {
     name                           = "psc-${var.redis_name}"
-    private_connection_resource_id = azurerm_managed_redis.main.id
+    private_connection_resource_id = module.redis_enterprise.cluster_id
     is_manual_connection           = false
     subresource_names              = ["redisEnterprise"]
   }
@@ -72,5 +72,5 @@ resource "azurerm_private_endpoint" "redis" {
 
   tags = var.tags
 
-  depends_on = [azurerm_managed_redis.main]
+  depends_on = [module.redis_enterprise]
 }

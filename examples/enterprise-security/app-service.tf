@@ -45,12 +45,12 @@ resource "azurerm_linux_web_app" "redis_test" {
   # Application Settings
   app_settings = {
     # Redis Configuration
-    "REDIS_HOSTNAME"       = azurerm_managed_redis.main.hostname
-    "REDIS_PORT"           = "10000"
-    "REDIS_PASSWORD"       = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.redis_password.id})"
-    "REDIS_SSL"            = "true"
-    "REDIS_CLUSTER_NAME"   = azurerm_managed_redis.main.name
-    "REDIS_USE_ENTRA_ID"   = "true"
+    "REDIS_HOSTNAME"     = module.redis_enterprise.hostname
+    "REDIS_PORT"         = tostring(module.redis_enterprise.port)
+    "REDIS_PASSWORD"     = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.redis_password.id})"
+    "REDIS_SSL"          = "true"
+    "REDIS_CLUSTER_NAME" = module.redis_enterprise.cluster_name
+    "REDIS_USE_ENTRA_ID" = "true"
 
     # Azure Configuration for Redis Management API
     "AZURE_SUBSCRIPTION_ID" = data.azurerm_client_config.current.subscription_id
@@ -66,7 +66,7 @@ resource "azurerm_linux_web_app" "redis_test" {
 
     # Application Insights
     "APPLICATIONINSIGHTS_CONNECTION_STRING" = azurerm_application_insights.redis_test.connection_string
-    
+
     # Azure Identity Configuration (for managed identity)
     "AZURE_CLIENT_ID" = azurerm_user_assigned_identity.redis.client_id
   }
@@ -103,7 +103,7 @@ resource "azurerm_linux_web_app" "redis_test" {
   })
 
   depends_on = [
-    azurerm_managed_redis.main,
+    module.redis_enterprise,
     azurerm_role_assignment.kv_secrets_user
   ]
 }

@@ -84,7 +84,7 @@ module "redis_primary" {
   defer_upgrade = "NotDeferred"
 
   # Use AzAPI provider
-  use_azapi = true
+  use_azapi = var.use_azapi
 
   tags = {
     Environment = var.environment
@@ -121,11 +121,11 @@ module "redis_secondary" {
 
   # Geo-replication configuration - includes both databases
   # This establishes the link after both clusters exist
-  # Note: The secondary database ID will be added through terraform output after initial creation
   geo_replication_enabled         = var.enable_geo_replication_linking
   geo_replication_group_nickname  = var.geo_replication_group_name
   geo_replication_linked_database_ids = var.enable_geo_replication_linking ? [
-    module.redis_primary.database_id
+    module.redis_primary.database_id,
+    module.redis_secondary.database_id
   ] : []
 
   # Persistence disabled for geo-replication
@@ -137,7 +137,7 @@ module "redis_secondary" {
   defer_upgrade = "NotDeferred"
 
   # Use AzAPI provider
-  use_azapi = true
+  use_azapi = var.use_azapi
 
   tags = {
     Environment  = var.environment

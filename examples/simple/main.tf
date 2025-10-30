@@ -39,7 +39,7 @@ module "redis_enterprise" {
   minimum_tls_version = "1.2"
   client_protocol     = "Encrypted"
 
-  # Use AzAPI for now (will switch to native when available)
+  # Use AzAPI provider
   use_azapi = true
 
   tags = {

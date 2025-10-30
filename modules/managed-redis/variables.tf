@@ -144,3 +144,92 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "geo_replication_enabled" {
+  description = "Enable geo-replication for this database"
+  type        = bool
+  default     = false
+}
+
+variable "geo_replication_group_nickname" {
+  description = "The nickname for the geo-replication group"
+  type        = string
+  default     = ""
+}
+
+variable "geo_replication_linked_database_ids" {
+  description = "List of linked database IDs for geo-replication. Include this database's ID and all other databases in the replication group."
+  type        = list(string)
+  default     = []
+}
+
+variable "persistence_enabled" {
+  description = "Enable persistence for the database (AOF or RDB)"
+  type        = bool
+  default     = false
+}
+
+variable "persistence_aof_enabled" {
+  description = "Enable AOF persistence"
+  type        = bool
+  default     = false
+}
+
+variable "persistence_rdb_enabled" {
+  description = "Enable RDB persistence"
+  type        = bool
+  default     = false
+}
+
+variable "access_keys_authentication_enabled" {
+  description = "Enable access keys authentication"
+  type        = bool
+  default     = true
+}
+
+variable "defer_upgrade" {
+  description = "Whether to defer upgrade. Valid values: NotDeferred, Deferred"
+  type        = string
+  default     = "NotDeferred"
+
+  validation {
+    condition     = contains(["NotDeferred", "Deferred"], var.defer_upgrade)
+    error_message = "defer_upgrade must be either 'NotDeferred' or 'Deferred'."
+  }
+}
+
+# AzureRM-only features (not supported in AzAPI yet)
+variable "identity_type" {
+  description = "Type of managed identity. Options: null (none), 'SystemAssigned', 'UserAssigned', 'SystemAssigned, UserAssigned'. Only works with AzureRM provider."
+  type        = string
+  default     = null
+
+  validation {
+    condition     = var.identity_type == null || contains(["SystemAssigned", "UserAssigned", "SystemAssigned, UserAssigned"], var.identity_type)
+    error_message = "identity_type must be null, 'SystemAssigned', 'UserAssigned', or 'SystemAssigned, UserAssigned'."
+  }
+}
+
+variable "identity_ids" {
+  description = "List of User Assigned Managed Identity IDs. Required when identity_type includes 'UserAssigned'. Only works with AzureRM provider."
+  type        = list(string)
+  default     = []
+}
+
+variable "customer_managed_key_enabled" {
+  description = "Enable Customer Managed Key (CMK) encryption. Only works with AzureRM provider."
+  type        = bool
+  default     = false
+}
+
+variable "customer_managed_key_vault_key_id" {
+  description = "The Key Vault Key ID for Customer Managed Key encryption. Only works with AzureRM provider."
+  type        = string
+  default     = null
+}
+
+variable "customer_managed_key_identity_id" {
+  description = "The User Assigned Identity ID to use for accessing the Customer Managed Key. Only works with AzureRM provider."
+  type        = string
+  default     = null
+}

@@ -64,6 +64,16 @@ variable "tags" {
 }
 
 # ============================================================================
+# Provider Configuration
+# ============================================================================
+
+variable "use_azapi" {
+  description = "Use AzAPI provider instead of AzureRM for Redis resources (currently not implemented - AzureRM only)"
+  type        = bool
+  default     = false
+}
+
+# ============================================================================
 # BYOK (Bring Your Own Key) Configuration
 # ============================================================================
 
@@ -77,7 +87,7 @@ variable "byok_key_file_path" {
   description = "Path to the PEM file containing the encryption key (relative to module path). Required when use_byok = true."
   type        = string
   default     = "redis-encryption-key.pem"
-  
+
   validation {
     condition     = can(regex("\\.(pem|key)$", var.byok_key_file_path))
     error_message = "Key file must have .pem or .key extension."
@@ -88,7 +98,7 @@ variable "byok_key_size" {
   description = "Size of the encryption key in bits (2048 or 4096). Only used when generating a new key."
   type        = number
   default     = 2048
-  
+
   validation {
     condition     = contains([2048, 4096], var.byok_key_size)
     error_message = "Key size must be either 2048 or 4096 bits."

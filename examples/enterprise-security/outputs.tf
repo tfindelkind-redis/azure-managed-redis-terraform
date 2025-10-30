@@ -1,17 +1,17 @@
 # Cluster Information
 output "cluster_id" {
   description = "The ID of the Redis Enterprise cluster"
-  value       = azurerm_managed_redis.main.id
+  value       = module.redis_enterprise.cluster_id
 }
 
 output "cluster_name" {
   description = "The name of the Redis Enterprise cluster"
-  value       = azurerm_managed_redis.main.name
+  value       = module.redis_enterprise.cluster_name
 }
 
 output "hostname" {
   description = "The hostname of the Redis Enterprise cluster"
-  value       = azurerm_managed_redis.main.hostname
+  value       = module.redis_enterprise.hostname
 }
 
 output "resource_group_name" {
@@ -22,19 +22,19 @@ output "resource_group_name" {
 # Database Information
 output "database_id" {
   description = "The ID of the Redis database"
-  value       = "${azurerm_managed_redis.main.id}/databases/default"
+  value       = module.redis_enterprise.database_id
 }
 
 output "database_name" {
   description = "The name of the Redis database"
-  value       = "default"
+  value       = module.redis_enterprise.database_name
 }
 
 # Note: Access keys require additional data source or AzAPI call
 # They are not directly exposed by azurerm_managed_redis resource
 output "access_keys_note" {
   description = "Information about accessing keys"
-  value       = "Access keys can be retrieved using: az redisenterprise database list-keys --cluster-name ${azurerm_managed_redis.main.name} --resource-group ${data.azurerm_resource_group.main.name}"
+  value       = "Access keys can be retrieved using: az redisenterprise database list-keys --cluster-name ${module.redis_enterprise.cluster_name} --resource-group ${data.azurerm_resource_group.main.name}"
 }
 
 # Network Information
@@ -82,12 +82,12 @@ output "customer_managed_key_enabled" {
 # Connection Information
 output "connection_string_format" {
   description = "Redis connection string format (retrieve key separately)"
-  value       = "rediss://:<ACCESS_KEY>@${azurerm_managed_redis.main.hostname}:10000"
+  value       = "rediss://:<ACCESS_KEY>@${module.redis_enterprise.hostname}:${module.redis_enterprise.port}"
 }
 
 output "redis_cli_command_format" {
   description = "Command to connect using redis-cli (requires VNet access, retrieve key separately)"
-  value       = "redis-cli -h ${azurerm_managed_redis.main.hostname} -p 10000 --tls -a '<primary_key>' --no-auth-warning"
+  value       = "redis-cli -h ${module.redis_enterprise.hostname} -p ${module.redis_enterprise.port} --tls -a '<primary_key>' --no-auth-warning"
 }
 
 # Security Summary
@@ -98,7 +98,7 @@ output "security_features" {
     private_link          = true
     managed_identity      = true
     high_availability     = length(var.zones) > 1
-    tls_version          = var.minimum_tls_version
-    redis_modules        = false
+    tls_version           = var.minimum_tls_version
+    redis_modules         = false
   }
 }
