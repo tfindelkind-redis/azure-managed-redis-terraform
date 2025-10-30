@@ -143,21 +143,72 @@ az account set --subscription "your-subscription-name-or-id"
 cd examples/simple
 ```
 
-3. **Customize the deployment** (edit `terraform.tfvars.example`):
+3. **Customize the deployment**:
+
+Each example includes a `terraform.tfvars.example` file. You **must** customize these values for your Azure environment:
+
 ```bash
-# Copy and edit the example variables
+# Copy the example configuration
 cp terraform.tfvars.example terraform.tfvars
 
-# Edit with your preferred values
+# Edit with your values
 code terraform.tfvars
 ```
 
-Example `terraform.tfvars`:
+**Required Configuration** (adapt to your environment):
+
 ```hcl
-resource_group_name = "rg-azure-managed-redis-terraform"
-location           = "northeurope"
-redis_name         = "redis-demo-$(date +%s)"
-environment        = "demo"
+# terraform.tfvars - Customize these values!
+
+# Your Azure Subscription Details
+resource_group_name = "rg-redis-demo"           # Resource group name (will be created by default)
+location           = "eastus"                    # Azure region (e.g., eastus, westeurope, northeurope)
+redis_name         = "redis-demo-unique123"      # Must be globally unique across Azure!
+
+# Optional: Add metadata tags
+environment = "development"                      # e.g., development, staging, production
+owner      = "your-team-name"                   # Team or project name
+
+# Optional: Use existing resource group
+# create_resource_group = false                 # Set to false to use existing RG
+```
+
+**📍 Important Notes:**
+
+| Setting | What to Change | Why |
+|---------|---------------|-----|
+| `resource_group_name` | Use your own RG name | Resource group that will be created (or used if exists) |
+| `location` | Choose your region | Affects latency and data residency |
+| `redis_name` | **Must be globally unique** | Forms DNS name: `<redis_name>.<region>.redisenterprise.cache.azure.net` |
+| `create_resource_group` | Optional: `true`/`false` | Default: `true` (creates RG). Set to `false` to use existing RG |
+
+**💡 Region Selection Tips:**
+
+```bash
+# List available Azure regions
+az account list-locations --output table
+
+# Common regions:
+# - eastus, eastus2, westus, westus2, westus3
+# - northeurope, westeurope
+# - uksouth, ukwest
+# - australiaeast, southeastasia
+# - japaneast, japanwest
+```
+
+**🔐 Subscription Verification:**
+
+Before deploying, verify your Azure subscription:
+
+```bash
+# Check current subscription
+az account show --output table
+
+# List all subscriptions
+az account list --output table
+
+# Switch subscription if needed
+az account set --subscription "your-subscription-id"
 ```
 
 4. **Deploy with Terraform commands**:
@@ -223,29 +274,55 @@ terraform output redis_connection_info
 terraform output -raw redis_connection_string
 ```
 
-### � Local Setup (Alternative)
+### 💻 Local Setup (Alternative)
 
 If you prefer to work locally instead of using Codespaces:
 
+**Prerequisites:**
+- [Terraform](https://www.terraform.io/downloads) >= 1.3
+- [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
+- [redis-cli](https://redis.io/docs/getting-started/installation/) (optional, for testing)
+
+**Setup Steps:**
+
 ```bash
-# 1. Clone the repe
+# 1. Fork and clone your fork
 git clone https://github.com/YOUR-USERNAME/azure-managed-redis-terraform.git
 cd azure-managed-redis-terraform
 
-# 2. Install prerequisites (if not already installed)
-# - Terraform 1.7.5+
-# - Azure CLI
-# - redis-cli (optional, for testing)
-
-# 3. Authenticate with Azure
+# 2. Authenticate with Azure
 az login
-az account set --subscription "your-subscription-name-or-id"
 
-# 4. Navigate to an example and deploy
+# Verify your subscription
+az account show --output table
+
+# Set subscription if you have multiple
+az account set --subscription "your-subscription-id"
+
+# 3. Navigate to an example
 cd examples/simple
+
+# 4. Configure for your environment
+cp terraform.tfvars.example terraform.tfvars
+
+# Edit terraform.tfvars with your values:
+# - resource_group_name: Your resource group name
+# - location: Your Azure region (e.g., eastus, westeurope)
+# - redis_name: Globally unique name for your Redis instance
+nano terraform.tfvars  # or use your preferred editor
+
+# 5. Deploy
 terraform init
+terraform plan
 terraform apply
 ```
+
+**⚙️ Configuration Checklist:**
+- ✅ Azure subscription is active and selected
+- ✅ `terraform.tfvars` has unique `redis_name`
+- ✅ `location` matches your preferred Azure region
+- ✅ `resource_group_name` is set (RG will be created by default)
+- ✅ If using existing RG, set `create_resource_group = false`
 
 ## 🔧 Requirements
 
