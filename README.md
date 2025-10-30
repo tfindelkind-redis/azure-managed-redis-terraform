@@ -5,43 +5,67 @@
 [![Nightly Validation](https://github.com/tfindelkind-redis/azure-managed-redis-terraform/actions/workflows/nightly-validation.yml/badge.svg)](https://github.com/tfindelkind-redis/azure-managed-redis-terraform/actions/workflows/nightly-validation.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-> **Deploy Azure Managed Redis with Terraform — AzAPI Today, Native Tomorrow**
+> **Deploy Azure Managed Redis with Full Feature Support — Stay Current with Azure's Latest Capabilities**
 
-A Terraform module for deploying Azure Managed Redis (Redis Enterprise) with seamless migration path from AzAPI to native azurerm provider.
+A comprehensive Terraform module for Azure Managed Redis (Redis Enterprise) that provides **complete feature coverage** by combining both AzAPI and AzureRM providers. Get access to the latest Azure features as soon as they're available, while maintaining a stable and production-ready interface.
+
+**[🚀 Jump to Quick Start](#-quick-start)** | **[📚 Browse Examples](#-examples)** | **[📖 Full Documentation](#-module-documentation)**
+
+## 🎯 Why This Module?
+
+While the native AzureRM provider now supports Azure Managed Redis, **critical enterprise features are still missing**:
+
+| Feature | AzureRM Provider | This Module (AzAPI) | Enterprise Need |
+|---------|------------------|---------------------|-----------------|
+| **Clusterless Mode** | ❌ Not supported | ✅ Fully supported | Single-shard deployments, cost optimization |
+| **RDB Persistence** | ❌ Not supported | ✅ Fully supported | Point-in-time backup & recovery |
+| **AOF Persistence** | ❌ Not supported | ✅ Fully supported | Maximum data durability |
+| **Zone Redundancy** | ❌ Not supported | ✅ Fully supported | High availability across AZs |
+| **Geo-Replication** | ❌ Not supported | ✅ Fully supported | Global active-active deployments |
+| **Managed Identity** | ✅ Supported | ✅ Fully supported | Secure authentication without passwords |
+| **Customer Managed Keys** | ✅ Supported | ✅ Fully supported | Encryption with your own keys |
+
+**This module bridges the gap** by:
+- ✅ **Always up-to-date**: Access new Azure features immediately via AzAPI
+- ✅ **Dual provider support**: Use AzureRM for standard features, AzAPI for advanced ones
+- ✅ **Complete feature set**: All Azure Managed Redis capabilities in one module
+- ✅ **Future-proof**: Seamlessly switch providers as AzureRM catches up
+- ✅ **Production-ready**: Battle-tested with comprehensive examples and CI/CD
 
 ## ⭐ Features
 
 ### Core Features
 - **Azure Managed Redis**: Fully managed Redis Enterprise cluster with high performance
 - **Dual Provider Support**: Seamlessly switch between AzAPI and AzureRM providers
-- **Stable API**: Uses Azure Redis Enterprise API version `2025-05-01-preview` (proven stable)
+- **Complete Feature Coverage**: All Azure Managed Redis capabilities available
 - **Extended SKU Options**: Support for 40+ SKUs including Balanced, Flash-Optimized, Memory/Compute variants
 - **Redis Modules**: Support for RedisJSON, RediSearch, RedisBloom, RedisTimeSeries
 
 ### Deployment Options
-- **Clusterless Deployment**: Single-shard deployment with `EnterpriseCluster` policy
+- **Clusterless Deployment**: Single-shard deployment with `EnterpriseCluster` policy (AzAPI)
 - **Clustered Deployment**: Multi-shard deployment with `OSSCluster` policy
 - **High Availability**: Active-passive replication with automatic failover
-- **Zone Redundancy**: Deploy across availability zones (AzAPI only)
-- **Geo-Replication**: Active geo-replication across regions (AzAPI only)
+- **Zone Redundancy**: Deploy across availability zones for HA (AzAPI)
+- **Geo-Replication**: Active geo-replication across regions (AzAPI)
 
-### Data Persistence
-- **RDB Persistence**: Point-in-time snapshots for backup and recovery (AzAPI only)
-- **AOF Persistence**: Append-only file for maximum durability (AzAPI only)
-- **Combined RDB + AOF**: Best of both worlds for optimal protection (AzAPI only)
+### Data Persistence (AzAPI Only - Not in AzureRM)
+- **RDB Persistence**: Point-in-time snapshots for backup and recovery
+- **AOF Persistence**: Append-only file for maximum durability
+- **Combined RDB + AOF**: Best of both worlds for optimal data protection
+- **Flexible Frequency**: Configurable snapshot and write-log intervals
 
 ### Security Features
 - **TLS Encryption**: Minimum TLS 1.2 with encrypted client protocol
 - **Access Keys Control**: Option to disable access keys for Entra ID-only authentication
-- **Managed Identity**: SystemAssigned and UserAssigned identity support (AzureRM only)
-- **Customer Managed Keys**: Encryption with your own Key Vault keys (AzureRM only)
+- **Managed Identity**: SystemAssigned and UserAssigned identity support (AzureRM)
+- **Customer Managed Keys**: Encryption with your own Key Vault keys (AzureRM)
 - **Private Endpoints**: VNet integration support
 
 ### Developer Experience
 - **Centralized Switch Script**: One command to switch between providers across all examples
 - **Automated Testing**: Comprehensive test suite validates all examples
 - **CI/CD Ready**: GitHub Actions workflows for automated validation
-- **Future-Proof**: Ready for native azurerm provider migration
+- **Future-Proof**: Ready to adopt AzureRM features as they become available
 
 ## 🏗️ Architecture
 
