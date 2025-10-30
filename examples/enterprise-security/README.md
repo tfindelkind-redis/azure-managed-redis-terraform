@@ -1,12 +1,12 @@
 # Enterprise Security Example (Private Endpoint + High Availability + CMK + Managed Identity)
 
-This example demonstrates Azure Managed Redis (Redis Enterprise) with **full enterprise-grade security features** using the **native azurerm provider**.
+This example demonstrates Azure Managed Redis (Redis Enterprise) with **full enterprise-grade security features** using the **module with AzAPI provider support**.
 
-> **✅ New in azurerm v4.50+**: This example uses the new `azurerm_managed_redis` resource which fully supports Customer Managed Keys (CMK) and Managed Identity! The older `azurerm_redis_enterprise_cluster` resource is now deprecated.
+> **✅ Provider Flexibility**: This example uses the managed-redis module which supports both AzureRM and AzAPI providers. It's currently configured to use **AzAPI** (via `use_azapi = true`) which provides complete feature support including Customer Managed Keys and Managed Identity with the latest Azure API.
 
 ## 🔐 Security Features
 
-This example showcases ALL enterprise security features available in the azurerm provider:
+This example showcases ALL enterprise security features available in Azure Managed Redis:
 
 ### 1. **Customer Managed Keys (CMK)** 🔑 ✅ IMPLEMENTED
 - Encryption keys stored in Azure Key Vault (Premium tier)
@@ -14,6 +14,7 @@ This example showcases ALL enterprise security features available in the azurerm
 - Meets compliance requirements (GDPR, HIPAA, SOC 2, etc.)
 - Purge protection and soft delete enabled
 - RBAC-based access control
+- **Supported via AzAPI provider** with latest 2025-05-01-preview API
 
 ### 2. **Private Link** 🔒 ✅ IMPLEMENTED
 - **No public internet access** - cluster is completely private
@@ -21,6 +22,7 @@ This example showcases ALL enterprise security features available in the azurerm
 - Private DNS resolution for seamless connectivity
 - Network isolation and enhanced security posture
 - Compatible with hybrid cloud and on-premises connectivity
+- **Note**: Application Security Groups (ASGs) can be associated via separate resource
 
 ### 3. **Managed Identity** 🆔 ✅ IMPLEMENTED
 - No passwords or connection strings stored in code
@@ -30,11 +32,12 @@ This example showcases ALL enterprise security features available in the azurerm
   - **Redis Identity**: For the Redis cluster itself
   - **Key Vault Identity**: For CMK access
 - RBAC role assignments for least-privilege access
+- **Supported via AzAPI provider**
 
 ### 4. **Additional Security Features** ✅ IMPLEMENTED
-- **High Availability**: Enterprise SKU with clustering support
-- **TLS encryption**: Encrypted client protocol
-- **Redis Modules**: RedisJSON and RediSearch included
+- **High Availability**: Balanced SKU with zone redundancy
+- **TLS 1.2 encryption**: Encrypted client protocol
+- **Access Keys disabled**: EntraID authentication only
 - **Resource tagging**: For governance and cost tracking
 
 ## 🏗️ Architecture
@@ -43,51 +46,52 @@ This example showcases ALL enterprise security features available in the azurerm
 ┌─────────────────────────────────────────────────────────────┐
 │  Azure Subscription                                         │
 │                                                             │
-│  ┌───────────────────────────────────────────────────────┐ │
-│  │  Virtual Network (10.0.0.0/16)                        │ │
-│  │                                                       │ │
-│  │  ┌─────────────────────────────────────────────────┐ │ │
-│  │  │  Subnet (10.0.1.0/24)                           │ │ │
-│  │  │                                                 │ │ │
-│  │  │  ┌──────────────────────────────────────────┐  │ │ │
-│  │  │  │  Private Endpoint                        │  │ │ │
-│  │  │  │  ↓                                       │  │ │ │
-│  │  │  │  Redis Enterprise Cluster (PRIVATE)     │  │ │ │
-│  │  │  │  - SKU: Enterprise_E10                  │  │ │ │
-│  │  │  │  - Zones: 1, 2, 3 (HA)                  │  │ │ │
-│  │  │  │  - CMK Encryption                       │  │ │ │
-│  │  │  │  - Managed Identities                   │  │ │ │
-│  │  │  │  - TLS 1.2                              │  │ │ │
-│  │  │  │  - Modules: JSON, Search                │  │ │ │
-│  │  │  └──────────────────────────────────────────┘  │ │ │
-│  │  └─────────────────────────────────────────────────┘ │ │
-│  │                                                       │ │
-│  │  ┌─────────────────────────────────────────────────┐ │ │
-│  │  │  Private DNS Zone                               │ │ │
-│  │  │  privatelink.redisenterprise.cache.azure.net    │ │ │
-│  │  └─────────────────────────────────────────────────┘ │ │
-│  └───────────────────────────────────────────────────────┘ │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │  Virtual Network (10.0.0.0/16)                        │  │
+│  │                                                       │  │
+│  │  ┌─────────────────────────────────────────────────┐  │  │
+│  │  │  Subnet (10.0.1.0/24)                           │  │  │
+│  │  │                                                 │  │  │
+│  │  │  ┌──────────────────────────────────────────┐   │  │  │
+│  │  │  │  Private Endpoint                        │   │  │  │
+│  │  │  │  ↓                                       │   │  │  │
+│  │  │  │  Redis Enterprise Cluster (PRIVATE)      │   │  │  │
+│  │  │  │  - SKU: Balanced_B3                      │   │  │  │
+│  │  │  │  - Zones: 1, 2, 3 (HA)                   │   │  │  │
+│  │  │  │  - CMK Encryption                        │   │  │  │
+│  │  │  │  - Managed Identities                    │   │  │  │
+│  │  │  │  - TLS 1.2                               │   │  │  │
+│  │  │  │  - Access Keys: Disabled                 │   │  │  │
+│  │  │  └──────────────────────────────────────────┘   │  │  │
+│  │  └─────────────────────────────────────────────────┘  │  │
+│  │                                                       │  │
+│  │  ┌─────────────────────────────────────────────────┐  │  │
+│  │  │  Private DNS Zone                               │  │  │
+│  │  │  privatelink.redis.azure.net                    │  │  │
+│  │  └─────────────────────────────────────────────────┘  │  │
+│  └───────────────────────────────────────────────────────┘  │
 │                                                             │
-│  ┌───────────────────────────────────────────────────────┐ │
-│  │  Key Vault (Premium)                                  │ │
-│  │  - Customer Managed Key (RSA 2048)                    │ │
-│  │  - RBAC Access Control                                │ │
-│  │  - Purge Protection Enabled                           │ │
-│  │  - Soft Delete (7 days)                               │ │
-│  └───────────────────────────────────────────────────────┘ │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │  Key Vault (Premium)                                  │  │
+│  │  - Customer Managed Key (RSA 2048)                    │  │
+│  │  - RBAC Access Control                                │  │
+│  │  - Purge Protection Enabled                           │  │
+│  │  - Soft Delete (7 days)                               │  │
+│  └───────────────────────────────────────────────────────┘  │
 │                                                             │
-│  ┌───────────────────────────────────────────────────────┐ │
-│  │  User-Assigned Managed Identities                     │ │
-│  │  ┌─────────────────────────────────────────────────┐  │ │
-│  │  │  Redis Identity                                 │  │ │
-│  │  │  - Assigned to Redis cluster                    │  │ │
-│  │  └─────────────────────────────────────────────────┘  │ │
-│  │  ┌─────────────────────────────────────────────────┐  │ │
-│  │  │  Key Vault Identity                             │  │ │
-│  │  │  - Role: Key Vault Crypto Service Encryption    │  │ │
-│  │  │  - Access to CMK for encryption                 │  │ │
-│  │  └─────────────────────────────────────────────────┘  │ │
-│  └───────────────────────────────────────────────────────┘ │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │  User-Assigned Managed Identities                     │  │
+│  │  ┌─────────────────────────────────────────────────┐  │  │
+│  │  │  Redis Identity                                 │  │  │
+│  │  │  - Assigned to Redis cluster                    │  │  │
+│  │  │  - Used for EntraID authentication              │  │  │
+│  │  └─────────────────────────────────────────────────┘  │  │
+│  │  ┌─────────────────────────────────────────────────┐  │  │
+│  │  │  Key Vault Identity                             │  │  │
+│  │  │  - Role: Key Vault Crypto Service Encryption    │  │  │
+│  │  │  - Access to CMK for encryption                 │  │  │
+│  │  └─────────────────────────────────────────────────┘  │  │
+│  └───────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -99,11 +103,11 @@ You need permissions to create:
 - Private Endpoints and Private DNS Zones
 - Key Vaults (Premium tier)
 - Managed Identities
-- Redis Enterprise clusters (Enterprise_E10 SKU)
+- Redis Enterprise clusters (Balanced SKU)
 - Role assignments
 
 ### Azure Subscription Requirements
-- Enterprise SKU quota available
+- Balanced SKU quota available
 - Subscription must support:
   - Redis Enterprise in selected region
   - Premium Key Vault
@@ -116,64 +120,46 @@ You need permissions to create:
 
 ## 🚀 Quick Start
 
-### Option 1: Modular Deployment (Recommended) ✨
-
-Deploy in phases - perfect for testing and fixing individual components:
+### Standard Deployment
 
 ```bash
 cd examples/enterprise-security
-./deploy-modular.sh
-```
 
-**Deployment Phases:**
-1. 🌐 **Foundation** - Network (VNet + Subnet)
-2. 🔐 **Security** - Managed Identities (2x User-Assigned)
-3. 🔑 **Encryption** - Key Vault + CMK + Role Assignments
-4. 🚀 **Redis** - Enterprise Cache with CMK & Modules (~15-20 min)
-5. 🔗 **Private Link** - Private Endpoint + DNS
-
-**Benefits:**
-- ✅ Deploy incrementally - test after each phase
-- ✅ Skip already-deployed components
-- ✅ Fix only what's broken - no need to destroy everything
-- ✅ Interactive prompts guide you through
-
-### Option 2: Interactive Fix/Deploy Tool
-
-Manage individual resources with a menu-driven interface:
-
-```bash
-./fix-resource.sh
-```
-
-**Features:**
-- 📊 View current deployment state
-- 🔧 Deploy/update specific components
-- 🗑️ Destroy specific components
-- 🔄 Force recreation (taint + redeploy)
-- 📋 View component details
-- 📥 Import existing resources
-
-**📖 See [RESOURCE-MANAGEMENT.md](./RESOURCE-MANAGEMENT.md) for detailed workflows and troubleshooting**
-
-### Option 3: Automated Full Deployment
-
-Use the test script for a one-shot deployment:
-
-```bash
-./test-local.sh
-```
-
-### Option 4: Manual Deployment
-
-```bash
-# 1. Create terraform.tfvars
+# 1. Create terraform.tfvars from example
 cp terraform.tfvars.example terraform.tfvars
 
 # 2. Edit configuration (customize as needed)
 code terraform.tfvars
 
 # 3. Initialize Terraform
+terraform init
+
+# 4. Review planned changes
+terraform plan
+
+# 5. Deploy infrastructure (~15-20 minutes for Redis cluster)
+terraform apply
+
+# 6. View outputs
+terraform output
+```
+
+### Switch Between Providers
+
+This example supports both AzAPI and AzureRM providers:
+
+```bash
+# Currently using AzAPI (default)
+# To switch to AzureRM:
+./switch-provider.sh to-azurerm
+
+# To switch back to AzAPI:
+./switch-provider.sh to-azapi
+
+# After switching, run:
+terraform init -upgrade
+terraform plan
+```
 terraform init
 
 # 4. Plan deployment
@@ -187,16 +173,18 @@ terraform apply
 
 ### Provider Support
 
-This example currently uses the **AzureRM provider** exclusively. While other examples in this repository support switching between AzureRM and AzAPI providers using the `use_azapi` variable, this example is optimized for AzureRM.
+This example uses the **managed-redis module** which supports both AzureRM and AzAPI providers via the `use_azapi` variable.
 
-**Why AzureRM?**
-- The `azurerm_managed_redis` resource (introduced in v4.50+) now fully supports all enterprise security features
-- All features demonstrated in this example (CMK, Private Link, Managed Identity, Access Policies) work identically in both providers
-- The AzureRM provider is the officially recommended approach for Managed Redis
-- Simpler implementation and better community support
+**Current Configuration: AzAPI Provider** (`use_azapi = true`)
 
-**Future AzAPI Support**
-If you need AzAPI provider support for this example, please see [AZAPI_SUPPORT_PLAN.md](./AZAPI_SUPPORT_PLAN.md) for implementation options and migration paths.
+**Why AzAPI for this example?**
+- Full support for Customer Managed Keys (CMK) with the latest API
+- Complete Managed Identity integration
+- Access to all preview features (clusterless mode, persistence, etc.)
+- Latest Azure API version (2025-05-01-preview)
+- Same security features as AzureRM with enhanced flexibility
+
+Both providers support all security features demonstrated in this example (CMK, Private Link, Managed Identity, TLS 1.2). See the Quick Start section above for how to switch providers.
 
 ### Key Variables
 
@@ -205,13 +193,14 @@ If you need AzAPI provider support for this example, please see [AZAPI_SUPPORT_P
 | `resource_group_name` | Resource group name | `rg-redis-enterprise-security` | No |
 | `location` | Azure region | `northeurope` | No |
 | `redis_name` | Redis cluster name | `redis-enterprise-secure` | No |
-| `sku_name` | Redis SKU (E10+ for CMK) | `Enterprise_E10` | No |
+| `sku_name` | Redis SKU | `Balanced_B3` | No |
 | `zones` | Availability zones | `["1", "2", "3"]` | No |
 | `minimum_tls_version` | Minimum TLS version | `"1.2"` | No |
-| `enable_modules` | Enable Redis modules | `true` | No |
 | `vnet_address_space` | VNet address space | `["10.0.0.0/16"]` | No |
 | `redis_subnet_prefix` | Subnet address prefix | `["10.0.1.0/24"]` | No |
-| `use_azapi` | Use AzAPI provider | `false` | No (currently not implemented) |
+| `use_azapi` | Use AzAPI provider | `true` | No |
+| `customer_managed_key_enabled` | Enable CMK encryption | `true` | No |
+| `identity_type` | Managed identity type | `"UserAssigned"` | No |
 
 ### Example Configuration
 
@@ -219,10 +208,14 @@ If you need AzAPI provider support for this example, please see [AZAPI_SUPPORT_P
 resource_group_name = "rg-redis-prod-secure"
 location            = "westeurope"
 redis_name          = "redis-prod-secure-001"
-sku_name            = "Enterprise_E20"  # Larger SKU for production
+sku_name            = "Balanced_B5"  # Larger SKU for production
 zones               = ["1", "2", "3"]
 minimum_tls_version = "1.2"
-enable_modules      = true
+use_azapi           = true  # Using AzAPI for full feature support
+
+# Security configuration
+customer_managed_key_enabled = true
+identity_type                = "UserAssigned"
 
 tags = {
   "Environment" = "production"
@@ -238,89 +231,73 @@ tags = {
 
 | Component | Estimated Monthly Cost | Notes |
 |-----------|------------------------|-------|
-| **Redis Enterprise E10** | ~$1,450 | 3 zones, high availability |
+| **Redis Balanced B3** | ~$600 | 3 zones, high availability |
 | **Key Vault Premium** | ~$5 | Customer managed key storage |
 | **Private Endpoint** | ~$10 | Per endpoint |
 | **VNet** | ~$0 | No charge for VNet itself |
 | **Data Transfer** | Variable | Depends on usage |
-| **Total** | **~$1,465/month** | Approximate, region-dependent |
+| **Total** | **~$615/month** | Approximate, region-dependent |
 
 ### Cost Optimization Tips
 
-- 🔹 **Development/Testing**: Use `Enterprise_E10` or smaller
-- 🔹 **Production**: Consider `Enterprise_E20` or higher based on workload
+- 🔹 **Development/Testing**: Use `Balanced_B1` or `Balanced_B3`
+- 🔹 **Production**: Consider `Balanced_B5` or higher based on workload
 - 🔹 **Regional Pricing**: Costs vary by Azure region
 - 🔹 **Reserved Instances**: Not available for Redis Enterprise (as of Oct 2025)
 - 🔹 **Auto-scaling**: Not supported; choose appropriate SKU upfront
+- 🔹 **Switch providers**: Both AzAPI and AzureRM have same costs
 
 ## 🧪 Testing
 
 ### Prerequisites for Testing
 Since Redis is deployed with **Private Link only**, you need network access:
 
-**Option 1: Deploy Azure Function (Recommended)** ✨
+**Option 1: Deploy Test App Service with VNet Integration** ✨
+
+This example includes infrastructure for a test application (see `app.tf`):
+
 ```bash
-# Deploy a lightweight function with VNet integration
-./create-test-function.sh
+# The terraform.tfvars includes app service deployment
+# It will create:
+# ✅ App Service with VNet integration
+# ✅ Application Insights for monitoring
+# ✅ Managed Identity for secure Redis access
+# ✅ Key Vault integration for secrets
 
-# This will:
-# ✅ Create an Azure Function with VNet integration
-# ✅ Run comprehensive connectivity tests
-# ✅ Validate Private Link DNS resolution
-# ✅ Test Redis operations (PING, SET/GET, JSON)
-# ✅ Return results via HTTP endpoint
-
-# The function URL will be displayed - just curl it to test!
+# After terraform apply, test connectivity:
+APP_URL=$(terraform output -raw app_service_url)
+curl "$APP_URL/api/health"
 ```
 
 **Option 2: Deploy a Test VM**
-```bash
-# Deploy a VM in the same VNet
-./create-test-vm.sh
 
-# Then SSH to the VM and test from there
-```
-
-**Option 3: Use Azure Bastion**
+**Option 2: Use Azure Bastion or VPN**
 ```bash
-# Deploy Azure Bastion to securely access resources
-# Connect through Bastion to test connectivity
-```
-
-**Option 4: VPN or ExpressRoute**
-```bash
-# Connect your on-premises network to the VNet
-# Test from your local machine through the VPN
+# Option A: Deploy Azure Bastion to securely access resources in the VNet
+# Option B: Connect via VPN or ExpressRoute from on-premises
+# Then test from within the connected network
 ```
 
 ### Test Commands (from within VNet)
 
 ```bash
 # Get the connection details
-PRIMARY_KEY=$(terraform output -raw primary_access_key)
 HOSTNAME=$(terraform output -raw hostname)
 
-# Test basic connectivity
-redis-cli -h $HOSTNAME -p 10000 --tls -a "$PRIMARY_KEY" --no-auth-warning PING
-# Expected: PONG
+# Note: This example has access keys DISABLED for security
+# Authentication is via EntraID/Managed Identity only
 
-# Test RedisJSON module
-redis-cli -h $HOSTNAME -p 10000 --tls -a "$PRIMARY_KEY" --no-auth-warning \
-  JSON.SET user:1 . '{"name":"John","age":30,"city":"Oslo"}'
-# Expected: OK
+# Test basic connectivity (EntraID auth)
+redis-cli -h $HOSTNAME -p 10000 --tls --no-auth-warning PING
+# Expected: PONG (if using managed identity from Azure resource)
 
-redis-cli -h $HOSTNAME -p 10000 --tls -a "$PRIMARY_KEY" --no-auth-warning \
-  JSON.GET user:1
-# Expected: {"name":"John","age":30,"city":"Oslo"}
+# Test basic SET/GET operations
+redis-cli -h $HOSTNAME -p 10000 --tls --no-auth-warning SET mykey "Hello Redis"
+redis-cli -h $HOSTNAME -p 10000 --tls --no-auth-warning GET mykey
+# Expected: "Hello Redis"
 
-# Test RediSearch module
-redis-cli -h $HOSTNAME -p 10000 --tls -a "$PRIMARY_KEY" --no-auth-warning \
-  FT.CREATE idx:users ON JSON PREFIX 1 user: SCHEMA $.name AS name TEXT
-# Expected: OK
-
-redis-cli -h $HOSTNAME -p 10000 --tls -a "$PRIMARY_KEY" --no-auth-warning \
-  FT.SEARCH idx:users "John"
-# Expected: Results with user:1
+# If you need to test with access keys, they can be retrieved with:
+# az redisenterprise database list-keys --cluster-name <name> --resource-group <rg>
 ```
 
 ## 🔍 Verification
@@ -376,14 +353,16 @@ After deployment, the following outputs are available:
 | `cluster_name` | Redis cluster name | No |
 | `hostname` | Redis hostname | No |
 | `database_id` | Database resource ID | No |
-| `primary_access_key` | Primary access key | **Yes** |
-| `secondary_access_key` | Secondary access key | **Yes** |
+| `database_name` | Database name | No |
+| `access_keys_note` | How to retrieve access keys | No |
 | `private_ip_address` | Private endpoint IP | No |
+| `private_endpoint_id` | Private endpoint resource ID | No |
 | `managed_identity_redis_id` | Redis identity ID | No |
 | `managed_identity_keyvault_id` | Key Vault identity ID | No |
 | `key_vault_id` | Key Vault resource ID | No |
 | `customer_managed_key_id` | CMK resource ID | No |
-| `connection_string` | Full connection string | **Yes** |
+| `customer_managed_key_enabled` | Whether CMK is enabled | No |
+| `vnet_id` | Virtual network resource ID | No |
 | `security_features` | Security features summary | No |
 
 ### Get Outputs
@@ -395,8 +374,9 @@ terraform output
 # Get specific output
 terraform output -raw hostname
 
-# Get sensitive output
-terraform output -raw primary_access_key
+# Get access keys (requires Azure CLI)
+terraform output -raw access_keys_note
+# Then run the az command shown
 ```
 
 ## 🧹 Cleanup
@@ -457,7 +437,31 @@ az role assignment create \
 - Ensure Key Vault has purge protection enabled
 - Verify managed identity has correct role assignment
 - Check that Key Vault allows the identity's access
-- Confirm SKU is Enterprise_E10 or higher (CMK requirement)
+- Confirm using AzAPI provider (`use_azapi = true`) for full CMK support
+- Verify API version is 2025-05-01-preview or later
+
+### Issue: Application Security Groups (ASG) Association
+
+**Symptom**: "Private Link already exists" error when associating ASG to Private Endpoint
+
+**Solution**:
+```hcl
+# Use separate resource with explicit dependency
+resource "azurerm_network_interface_application_security_group_association" "redis_pe" {
+  network_interface_id          = azurerm_private_endpoint.redis.network_interface[0].id
+  application_security_group_id = azurerm_application_security_group.redis.id
+  
+  depends_on = [azurerm_private_endpoint.redis]
+}
+
+# Or add a delay to ensure PE is fully created
+resource "time_sleep" "wait_for_pe" {
+  create_duration = "30s"
+  depends_on      = [azurerm_private_endpoint.redis]
+}
+```
+
+**Why this happens**: Azure eventual consistency - the PE network interface may not be fully propagated when Terraform tries to associate the ASG. The association succeeds in Azure but Terraform reports an error due to state timing.
 
 ## 📚 References
 
