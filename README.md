@@ -354,26 +354,6 @@ terraform apply
 | [AzAPI Provider](https://registry.terraform.io/providers/Azure/azapi/latest) | `~> 1.15` |
 | [AzureRM Provider](https://registry.terraform.io/providers/hashicorp/azurerm/latest) | `~> 4.50` |
 
-## 📖 Module Documentation
-
-### Feature Support Matrix
-
-For a comprehensive overview of all supported features, see [FEATURE-SUPPORT.md](FEATURE-SUPPORT.md).
-
-**Quick Reference:**
-
-| Feature | AzAPI | AzureRM |
-|---------|-------|---------|
-| Clusterless Deployment | ✅ | ✅ |
-| Clustered Deployment | ✅ | ✅ |
-| High Availability | ✅ | ✅ |
-| RDB Persistence | ✅ | ❌ |
-| AOF Persistence | ✅ | ❌ |
-| Zone Redundancy | ✅ | ❌ |
-| Geo-Replication | ✅ | ❌ |
-| Managed Identity | ❌ | ✅ |
-| Customer Managed Keys | ❌ | ✅ |
-
 ### Common Use Cases
 
 #### Clusterless Deployment with Persistence
