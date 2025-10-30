@@ -387,11 +387,11 @@ module "redis" {
   location            = "eastus"
   sku                 = "Balanced_B3"
   
-  # Managed Identity (requires AzureRM)
+  # Managed Identity (AzureRM only)
   identity_type = "UserAssigned"
   identity_ids  = [azurerm_user_assigned_identity.redis.id]
   
-  # Customer Managed Key
+  # Customer Managed Key (AzureRM only)
   customer_managed_key_enabled      = true
   customer_managed_key_vault_key_id = azurerm_key_vault_key.redis.id
   customer_managed_key_identity_id  = azurerm_user_assigned_identity.keyvault.id
@@ -399,12 +399,16 @@ module "redis" {
   # Disable access keys for Entra ID only
   access_keys_authentication_enabled = false
   
-  use_azapi = false
+  use_azapi = false  # Required for Managed Identity and CMK
 }
 ```
 
 #### Geo-Replication
 ```hcl
+# Note: Geo-replication requires a two-phase deployment
+# Phase 1: Deploy both clusters without geo-replication
+# Phase 2: Enable geo-replication with linked database IDs
+
 # Primary region
 module "redis_primary" {
   source = "./modules/managed-redis"
@@ -414,14 +418,14 @@ module "redis_primary" {
   location            = "eastus"
   sku                 = "Balanced_B3"
   
-  geo_replication_enabled        = true
-  geo_replication_group_nickname = "my-geo-group"
+  # Phase 1: Start without geo-replication
+  geo_replication_enabled = false
   
   use_azapi = true  # Required for geo-replication
 }
 
 # Secondary region
-module "redis_west" {
+module "redis_secondary" {
   source = "./modules/managed-redis"
   
   name                = "redis-west"
@@ -429,11 +433,19 @@ module "redis_west" {
   location            = "westus"
   sku                 = "Balanced_B3"
   
-  geo_replication_enabled        = true
-  geo_replication_group_nickname = "my-geo-group"
+  # Phase 2: After both are deployed, enable linking
+  geo_replication_enabled             = true
+  geo_replication_group_nickname      = "my-geo-group"
+  geo_replication_linked_database_ids = [
+    module.redis_primary.database_id  # Link to primary
+  ]
   
-  use_azapi = true
+  use_azapi = true  # Required for geo-replication
+  
+  depends_on = [module.redis_primary]
 }
+
+# See examples/geo-replication for complete implementation
 ```
 
 ## 🔐 Security Best Practices
