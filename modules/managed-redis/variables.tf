@@ -117,13 +117,18 @@ variable "client_protocol" {
 }
 
 variable "clustering_policy" {
-  description = "Clustering policy for the Redis database"
+  description = <<-EOT
+    Clustering policy for the Redis database.
+    - EnterpriseCluster: Single endpoint with proxy routing (required for RediSearch)
+    - OSSCluster: Redis Cluster API with direct shard connections (best performance)
+    - NoCluster: True non-clustered mode, no sharding (≤25 GB only, Preview)
+  EOT
   type        = string
   default     = "EnterpriseCluster"
 
   validation {
-    condition     = contains(["EnterpriseCluster", "OSSCluster"], var.clustering_policy)
-    error_message = "Clustering policy must be either 'EnterpriseCluster' or 'OSSCluster'."
+    condition     = contains(["EnterpriseCluster", "OSSCluster", "NoCluster"], var.clustering_policy)
+    error_message = "Clustering policy must be 'EnterpriseCluster', 'OSSCluster', or 'NoCluster'."
   }
 }
 

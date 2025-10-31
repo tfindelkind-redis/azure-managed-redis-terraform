@@ -17,7 +17,7 @@ While the native AzureRM provider now supports Azure Managed Redis, **critical e
 
 | Feature | AzureRM Provider | This Module (AzAPI) | Enterprise Need |
 |---------|------------------|---------------------|-----------------|
-| **Clusterless Mode** | ❌ Not supported | ✅ Fully supported | Single-shard deployments, cost optimization |
+| **Non-Clustered Mode** | ❌ Not supported | ✅ Fully supported | True non-clustered deployments (≤25 GB, Preview) |
 | **RDB Persistence** | ❌ Not supported | ✅ Fully supported | Point-in-time backup & recovery |
 | **AOF Persistence** | ❌ Not supported | ✅ Fully supported | Maximum data durability |
 | **Access Policy Assignments** | ❌ Not supported | ✅ Fully supported | Entra ID authentication & authorization |
@@ -41,8 +41,9 @@ While the native AzureRM provider now supports Azure Managed Redis, **critical e
 - **Redis Modules**: Support for RedisJSON, RediSearch, RedisBloom, RedisTimeSeries
 
 ### Deployment Options
-- **Clusterless Deployment**: Single-shard deployment with `EnterpriseCluster` policy (AzAPI)
-- **Clustered Deployment**: Multi-shard deployment with `OSSCluster` policy
+- **EnterpriseCluster Policy**: Single endpoint with proxy routing (appears non-clustered to applications)
+- **OSSCluster Policy**: Redis Cluster API with direct shard connections (best performance)
+- **NoCluster Policy**: True non-clustered mode, no sharding (≤25 GB only, Preview - AzAPI)
 - **High Availability**: Active-passive replication with automatic failover
 - **Zone Redundancy**: Deploy across availability zones for HA (AzAPI)
 - **Geo-Replication**: Active geo-replication across regions (AzAPI)
@@ -85,7 +86,7 @@ All examples include a centralized switch script for seamless provider switching
 | [High Availability](examples/high-availability/) | HA configuration | Production apps | Active-passive replication, zones |
 | [With Modules](examples/with-modules/) | Redis modules showcase | Feature exploration | RedisJSON, RediSearch, etc. |
 | [Geo-Replication](examples/geo-replication/) | Multi-region deployment | Global applications | Active geo-replication (AzAPI) |
-| [Clusterless + Persistence](examples/clusterless-with-persistence/) | Single-shard with persistence | Durable workloads | RDB + AOF persistence (AzAPI) |
+| [Enterprise Cluster + Persistence](examples/clusterless-with-persistence/) | Single endpoint with persistence | Durable workloads | RDB + AOF persistence (AzAPI) |
 | [Enterprise Security](examples/enterprise-security/) | Advanced security | Secure production | CMK, Managed Identity, Entra ID |
 
 ### 🔄 Provider Switching
@@ -357,7 +358,7 @@ terraform apply
 
 ### Common Use Cases
 
-#### Clusterless Deployment with Persistence
+#### EnterpriseCluster with Persistence
 ```hcl
 module "redis" {
   source = "./modules/managed-redis"
@@ -367,7 +368,7 @@ module "redis" {
   location            = "eastus"
   sku                 = "Balanced_B3"
   
-  # Clusterless configuration
+  # EnterpriseCluster: Single endpoint, appears non-clustered to applications
   clustering_policy = "EnterpriseCluster"
   
   # Persistence (requires AzAPI)
@@ -509,7 +510,7 @@ Use the centralized switch script in any example:
 **Use AzAPI for maximum feature coverage:**
 - ✅ All features supported (persistence, geo-replication, zones, identity, CMK)
 - ✅ Latest API features immediately available
-- ✅ Clusterless deployments
+- ✅ All clustering policies (EnterpriseCluster, OSSCluster, NoCluster)
 - ✅ Defer upgrade control
 - ✅ Recommended for new deployments
 
@@ -518,7 +519,7 @@ Use the centralized switch script in any example:
 - ✅ Managed Identity and Customer Managed Keys
 - ✅ Native Terraform resource experience
 - ✅ Good for simpler deployments
-- ❌ Missing: Persistence, Geo-replication, Zones, Clusterless mode
+- ❌ Missing: Persistence, Geo-replication, Zones, NoCluster mode, Access Policy Assignments
 
 **Best Practice:** Start with AzAPI (`use_azapi = true`) for complete feature coverage. You can switch anytime!
 
@@ -571,7 +572,7 @@ All 6 examples are tested automatically in CI/CD pipelines.
 
 ### Module Features
 - **Persistence**: RDB snapshots and AOF logging for data durability
-- **Clustering**: Support for both clusterless (EnterpriseCluster) and clustered (OSSCluster) deployments
+- **Clustering Policies**: EnterpriseCluster (single endpoint, proxy), OSSCluster (Redis Cluster API), NoCluster (true non-clustered, ≤25 GB)
 - **Security**: TLS encryption, access key control, managed identities, and customer-managed keys
 - **High Availability**: Active-passive replication, zone redundancy, and geo-replication
 - **Flexibility**: Switch between AzAPI and AzureRM providers as needed

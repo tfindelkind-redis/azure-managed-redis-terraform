@@ -235,7 +235,7 @@ No workarounds needed! See the [Azure Verified Modules (AVM)](https://github.com
 **Why AzAPI for this example?**
 - Full support for Customer Managed Keys (CMK) with the latest API
 - Complete Managed Identity integration
-- Access to all preview features (clusterless mode, persistence, etc.)
+- Access to all preview features (NoCluster mode, persistence, defer upgrade, etc.)
 - Latest Azure API version (2025-05-01-preview)
 - Same security features as AzureRM with enhanced flexibility
 
