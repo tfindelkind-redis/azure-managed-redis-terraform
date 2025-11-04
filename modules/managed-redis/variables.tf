@@ -168,12 +168,6 @@ variable "geo_replication_linked_database_ids" {
   default     = []
 }
 
-variable "persistence_enabled" {
-  description = "Enable persistence for the database (AOF or RDB)"
-  type        = bool
-  default     = false
-}
-
 variable "persistence_aof_enabled" {
   description = "Enable AOF persistence"
   type        = bool
