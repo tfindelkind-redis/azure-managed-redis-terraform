@@ -84,7 +84,7 @@ module "redis_primary" {
   defer_upgrade                      = "NotDeferred"
 
   # Use AzAPI provider
-  use_azapi = true
+  use_azapi = var.use_azapi
 
   tags = {
     Environment = var.environment
@@ -137,7 +137,7 @@ module "redis_secondary" {
   defer_upgrade                      = "NotDeferred"
 
   # Use AzAPI provider
-  use_azapi = true
+  use_azapi = var.use_azapi
 
   tags = {
     Environment = var.environment

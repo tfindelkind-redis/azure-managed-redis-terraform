@@ -35,7 +35,7 @@ module "redis_clusterless" {
   modules         = ["RedisJSON", "RediSearch"]
 
   # Provider - MUST use AzAPI for persistence
-  use_azapi = true
+  use_azapi = var.use_azapi
 
   tags = var.tags
 
