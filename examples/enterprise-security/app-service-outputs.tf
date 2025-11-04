@@ -38,7 +38,7 @@ output "app_deployment_status" {
 
 output "app_test_commands" {
   description = "Commands to test the deployed application"
-  value = <<-EOT
+  value       = <<-EOT
     # Test health endpoint
     curl https://${azurerm_linux_web_app.redis_test.default_hostname}/api/health
     

@@ -21,7 +21,7 @@ resource "azapi_resource" "redis_access_policy" {
   type      = "Microsoft.Cache/redisEnterprise/databases/accessPolicyAssignments@2024-10-01"
   name      = "app-managed-identity"
   parent_id = module.redis_enterprise.database_id
-  
+
   # Must disable schema validation as this resource type is not yet in the AzAPI schema
   schema_validation_enabled = false
 

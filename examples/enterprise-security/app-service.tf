@@ -175,8 +175,8 @@ resource "azurerm_role_assignment" "kv_secrets_user" {
 resource "null_resource" "deploy_app" {
   # Trigger redeployment if app.zip changes or app service is recreated
   triggers = {
-    app_zip_hash    = filemd5("${path.module}/app.zip")
-    app_service_id  = azurerm_linux_web_app.redis_test.id
+    app_zip_hash   = filemd5("${path.module}/app.zip")
+    app_service_id = azurerm_linux_web_app.redis_test.id
   }
 
   provisioner "local-exec" {

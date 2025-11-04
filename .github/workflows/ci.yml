@@ -29,6 +29,8 @@ jobs:
           - examples/with-modules
           - examples/high-availability
           - examples/geo-replication
+          - examples/clusterless-with-persistence
+          - examples/enterprise-security
     
     steps:
     - name: Checkout
@@ -62,6 +64,8 @@ jobs:
           - with-modules
           - high-availability
           - geo-replication
+          - clusterless-with-persistence
+          - enterprise-security
     
     steps:
     - name: Checkout
