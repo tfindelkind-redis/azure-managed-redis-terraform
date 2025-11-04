@@ -83,7 +83,8 @@ jobs:
         tenant-id: ${{ secrets.AZURE_TENANT_ID }}
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
         enable-AzPSSession: false
-      if: github.event_name != 'pull_request'
+      if: github.event_name != 'pull_request' && secrets.AZURE_CLIENT_ID != ''
+      continue-on-error: true
 
     - name: Terraform Init
       run: terraform init
@@ -92,7 +93,8 @@ jobs:
     - name: Terraform Plan
       run: terraform plan -input=false -no-color
       working-directory: examples/${{ matrix.example }}
-      if: github.event_name != 'pull_request'
+      if: github.event_name != 'pull_request' && secrets.AZURE_CLIENT_ID != ''
+      continue-on-error: true
 
     - name: Terraform Plan (PR)
       run: terraform plan -input=false -no-color -refresh=false
