@@ -11,15 +11,9 @@ variable "location" {
 }
 
 variable "redis_name" {
-  description = "Name of the Redis Enterprise cluster"
+  description = "Name of the Redis Enterprise cluster. Note: Key Vault names are limited to 24 characters, so names >21 chars will be truncated and modified."
   type        = string
   default     = "redis-enterprise-secure"
-}
-
-variable "environment" {
-  description = "Environment name"
-  type        = string
-  default     = "production"
 }
 
 variable "sku_name" {
@@ -96,16 +90,5 @@ variable "byok_key_file_path" {
   validation {
     condition     = can(regex("\\.(pem|key)$", var.byok_key_file_path))
     error_message = "Key file must have .pem or .key extension."
-  }
-}
-
-variable "byok_key_size" {
-  description = "Size of the encryption key in bits (2048 or 4096). Only used when generating a new key."
-  type        = number
-  default     = 2048
-
-  validation {
-    condition     = contains([2048, 4096], var.byok_key_size)
-    error_message = "Key size must be either 2048 or 4096 bits."
   }
 }

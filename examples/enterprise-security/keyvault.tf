@@ -1,6 +1,7 @@
 # Key Vault for Customer Managed Keys
 resource "azurerm_key_vault" "redis" {
-  name                       = "kv-${var.redis_name}"
+  # Use simple pattern if it fits (<=24 chars), otherwise truncate and remove hyphens
+  name                       = length("kv-${var.redis_name}") <= 24 ? "kv-${var.redis_name}" : "kv-${replace(substr(var.redis_name, 0, 20), "-", "")}"
   location                   = var.location
   resource_group_name        = data.azurerm_resource_group.main.name
   tenant_id                  = data.azurerm_client_config.current.tenant_id
@@ -88,15 +89,4 @@ resource "null_resource" "import_byok_key" {
     key_file_hash = filemd5("${path.module}/${var.byok_key_file_path}")
     key_vault_id  = azurerm_key_vault.redis.id
   }
-}
-
-# Data source to reference the key (works for both BYOK and Azure-generated)
-data "azurerm_key_vault_key" "redis" {
-  name         = "cmk-${var.redis_name}"
-  key_vault_id = azurerm_key_vault.redis.id
-
-  depends_on = [
-    azurerm_key_vault_key.redis,
-    null_resource.import_byok_key
-  ]
 }
