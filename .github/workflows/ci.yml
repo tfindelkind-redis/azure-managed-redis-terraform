@@ -141,7 +141,12 @@ jobs:
       run: |
         for example in examples/*/; do
           echo "Linting $example"
-          tflint --chdir="$example" --config=../../.tflint.hcl
+          # Use local .tflint.hcl if it exists, otherwise use root config
+          if [ -f "$example/.tflint.hcl" ]; then
+            tflint --chdir="$example"
+          else
+            tflint --chdir="$example" --config=../../.tflint.hcl
+          fi
         done
 
   documentation:

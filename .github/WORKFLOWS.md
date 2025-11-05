@@ -12,6 +12,13 @@ Runs on every push and pull request to validate Terraform code.
 - **terraform-validate**: Validates syntax and formatting (no Azure credentials needed)
 - **terraform-plan**: Attempts to create execution plan (requires Azure credentials)
 - **security-scan**: Runs tfsec and trivy security scans
+- **lint**: Runs tflint to check for best practices and potential issues
+
+**TFLint Configuration:**
+- Repository root has `.tflint.hcl` with default rules for all examples
+- Individual examples can override with their own `.tflint.hcl` file
+- Example: `examples/enterprise-security/.tflint.hcl` disables the standard module structure rule
+- The CI workflow automatically detects and uses local configs when present
 
 **Credential Handling:**
 - ✅ **Validation** always runs (format check, terraform validate)
