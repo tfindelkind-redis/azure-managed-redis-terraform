@@ -16,10 +16,6 @@ plugin "terraform" {
   preset  = "all"
 }
 
-plugin "azurerm" {
-  enabled = true
-}
-
 # Disable standard module structure rule for this example
 # We intentionally split outputs into multiple files for organization
 rule "terraform_standard_module_structure" {
