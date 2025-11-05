@@ -1,6 +1,32 @@
 #!/bin/bash
 set -e
 
+# ============================================================================
+# Test All Examples - Provider Switching Validation
+# ============================================================================
+#
+# This script tests the provider switching functionality across all examples
+# in the repository. It validates that users can seamlessly switch between
+# AzAPI and AzureRM providers without breaking the configuration.
+#
+# What it tests for each example:
+#   1. Status command works (./switch-provider.sh status)
+#   2. Switch to opposite provider (azapi ↔ azurerm)
+#   3. Verify configuration was updated correctly
+#   4. Switch back to original provider
+#   5. Verify configuration was restored
+#   6. Run terraform validate to ensure config is valid
+#
+# Usage:
+#   ./test-all-examples.sh
+#
+# Output:
+#   - Colored test results for each example
+#   - Summary report showing passed/failed tests
+#   - Exit code 0 if all tests pass, 1 if any fail
+#
+# ============================================================================
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
