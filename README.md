@@ -585,7 +585,39 @@ Each example includes detailed README with:
 - Testing procedures
 - Provider switching guidance
 
-## 📄 License
+## �️ Development & Testing
+
+### Local Testing (Without Committing!)
+
+Test GitHub Actions workflows locally before pushing:
+
+```bash
+# First time setup - installs required tools automatically
+./scripts/test-actions-locally.sh install
+
+# Run all validation checks
+./scripts/test-actions-locally.sh
+
+# Run specific checks
+./scripts/test-actions-locally.sh lint
+./scripts/test-actions-locally.sh validate
+./scripts/test-actions-locally.sh format
+
+# Run GitHub Actions with act
+act -j lint
+act -j terraform-validate
+```
+
+**Benefits:**
+- ✅ **Auto-install tools**: Detects and installs missing dependencies (terraform, tflint)
+- ✅ Test workflow changes without creating commits
+- ✅ Catch issues before CI/CD runs
+- ✅ Faster feedback loop
+- ✅ Save time and reduce commit noise
+
+📚 **Full Guide**: See [`.github/LOCAL_TESTING.md`](.github/LOCAL_TESTING.md) for complete documentation on local testing strategies.
+
+## �📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
