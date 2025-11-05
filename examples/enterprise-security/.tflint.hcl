@@ -7,7 +7,7 @@
 # This separation improves readability and maintainability for this complex example.
 
 config {
-  module = false
+  call_module_type = "none"
   force = false
 }
 
