@@ -29,6 +29,31 @@ See [PROVIDER-SWITCHING.md](./PROVIDER-SWITCHING.md) for detailed documentation.
 
 ## Usage
 
+### Prerequisites
+
+Before deploying, ensure you have:
+
+1. **Azure CLI** installed and authenticated:
+```bash
+az login
+az account show  # Verify your subscription
+```
+
+2. **Environment variables** set for Terraform:
+```bash
+# Required for local development
+export ARM_SUBSCRIPTION_ID=$(az account show --query id -o tsv)
+export ARM_USE_CLI=true
+
+# Verify
+echo "Subscription: $ARM_SUBSCRIPTION_ID"
+```
+
+> **Note**: GitHub Actions workflows handle authentication automatically via OIDC. 
+> Environment variables are only needed for local development.
+
+### Deployment Steps
+
 1. Update the variables in `terraform.tfvars`:
 
 ```hcl

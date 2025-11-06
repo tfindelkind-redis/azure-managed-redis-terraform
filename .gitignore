@@ -96,4 +96,6 @@ LogFiles/
 # Built Visual Studio Code Extensions
 *.vsix
 
+# for local debugging and tests
 /scatter/
+/tests/

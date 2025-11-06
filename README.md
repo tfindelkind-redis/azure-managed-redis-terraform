@@ -2,7 +2,10 @@
 
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/tfindelkind-redis/azure-managed-redis-terraform)
 [![CI](https://github.com/tfindelkind-redis/azure-managed-redis-terraform/actions/workflows/ci.yml/badge.svg)](https://github.com/tfindelkind-redis/azure-managed-redis-terraform/actions/workflows/ci.yml)
-[![Nightly Validation](https://github.com/tfindelkind-redis/azure-managed-redis-terraform/actions/workflows/nightly-validation.yml/badge.svg)](https://github.com/tfindelkind-redis/azure-managed-redis-terraform/actions/workflows/nightly-validation.yml)
+[![Nightly Validation](https://github.com/tfindelkind-redis/azure-managed-redis-terraform/actions/workflows/nightly-validation.yml/badge.svg)](https://github.com/tfindelkind-redis/azure-managed- Testing procedures
+- Provider switching guidance
+
+## ️ Development & Testingis-terraform/actions/workflows/nightly-validation.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 > **Deploy Azure Managed Redis with Full Feature Support — Stay Current with Azure's Latest Capabilities**
@@ -323,10 +326,18 @@ az account show --output table
 # Set subscription if you have multiple
 az account set --subscription "your-subscription-id"
 
-# 3. Navigate to an example
+# 3. Set Terraform environment variables for Azure authentication
+export ARM_SUBSCRIPTION_ID=$(az account show --query id -o tsv)
+export ARM_USE_CLI=true
+
+# Verify the environment is configured
+echo "Subscription ID: $ARM_SUBSCRIPTION_ID"
+echo "Using Azure CLI auth: $ARM_USE_CLI"
+
+# 4. Navigate to an example
 cd examples/simple
 
-# 4. Configure for your environment
+# 5. Configure for your environment
 cp terraform.tfvars.example terraform.tfvars
 
 # Edit terraform.tfvars with your values:
@@ -335,13 +346,15 @@ cp terraform.tfvars.example terraform.tfvars
 # - redis_name: Globally unique name for your Redis instance
 nano terraform.tfvars  # or use your preferred editor
 
-# 5. Deploy
+# 6. Deploy
 terraform init
 terraform plan
 terraform apply
 ```
 
 **⚙️ Configuration Checklist:**
+- ✅ Azure CLI is installed and authenticated (`az login`)
+- ✅ **Environment variables are set** (`ARM_SUBSCRIPTION_ID`, `ARM_USE_CLI=true`)
 - ✅ Azure subscription is active and selected
 - ✅ `terraform.tfvars` has unique `redis_name`
 - ✅ `location` matches your preferred Azure region

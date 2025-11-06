@@ -25,14 +25,14 @@ resource "azapi_resource" "redis_access_policy" {
   # Must disable schema validation as this resource type is not yet in the AzAPI schema
   schema_validation_enabled = false
 
-  body = jsonencode({
+  body = {
     properties = {
       accessPolicyName = "default" # CRITICAL: Must be "default" for Azure Managed Redis
       user = {
         objectId = azurerm_user_assigned_identity.redis.principal_id
       }
     }
-  })
+  }
 
   depends_on = [
     module.redis_enterprise,
