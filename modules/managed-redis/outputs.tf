@@ -20,7 +20,7 @@ output "database_name" {
 
 output "hostname" {
   description = "The hostname of the Redis database"
-  value       = var.use_azapi ? jsondecode(data.azapi_resource.cluster_data[0].output).properties.hostName : azurerm_managed_redis.cluster[0].hostname
+  value       = var.use_azapi ? data.azapi_resource.cluster_data[0].output.properties.hostName : azurerm_managed_redis.cluster[0].hostname
 }
 
 output "port" {
@@ -30,13 +30,13 @@ output "port" {
 
 output "primary_key" {
   description = "The primary access key for the Redis database (null if access keys are disabled)"
-  value       = var.access_keys_authentication_enabled ? (var.use_azapi ? jsondecode(data.azapi_resource_action.database_keys[0].output).primaryKey : azurerm_managed_redis.cluster[0].default_database[0].primary_access_key) : null
+  value       = var.access_keys_authentication_enabled ? (var.use_azapi ? data.azapi_resource_action.database_keys[0].output.primaryKey : azurerm_managed_redis.cluster[0].default_database[0].primary_access_key) : null
   sensitive   = true
 }
 
 output "secondary_key" {
   description = "The secondary access key for the Redis database (null if access keys are disabled)"
-  value       = var.access_keys_authentication_enabled ? (var.use_azapi ? jsondecode(data.azapi_resource_action.database_keys[0].output).secondaryKey : azurerm_managed_redis.cluster[0].default_database[0].secondary_access_key) : null
+  value       = var.access_keys_authentication_enabled ? (var.use_azapi ? data.azapi_resource_action.database_keys[0].output.secondaryKey : azurerm_managed_redis.cluster[0].default_database[0].secondary_access_key) : null
   sensitive   = true
 }
 
@@ -44,8 +44,8 @@ output "connection_string" {
   description = "Redis connection string (null if access keys are disabled)"
   value = var.access_keys_authentication_enabled ? (var.use_azapi ? format(
     "rediss://:%s@%s:10000",
-    jsondecode(data.azapi_resource_action.database_keys[0].output).primaryKey,
-    jsondecode(data.azapi_resource.cluster_data[0].output).properties.hostName
+    data.azapi_resource_action.database_keys[0].output.primaryKey,
+    data.azapi_resource.cluster_data[0].output.properties.hostName
     ) : format(
     "rediss://:%s@%s:%d",
     azurerm_managed_redis.cluster[0].default_database[0].primary_access_key,
@@ -59,8 +59,8 @@ output "connection_string_secondary" {
   description = "Redis connection string using secondary key (null if access keys are disabled)"
   value = var.access_keys_authentication_enabled ? (var.use_azapi ? format(
     "rediss://:%s@%s:10000",
-    jsondecode(data.azapi_resource_action.database_keys[0].output).secondaryKey,
-    jsondecode(data.azapi_resource.cluster_data[0].output).properties.hostName
+    data.azapi_resource_action.database_keys[0].output.secondaryKey,
+    data.azapi_resource.cluster_data[0].output.properties.hostName
     ) : format(
     "rediss://:%s@%s:%d",
     azurerm_managed_redis.cluster[0].default_database[0].secondary_access_key,
@@ -104,7 +104,7 @@ output "redis_cli_command" {
   description = "Redis CLI command to connect to the database"
   value = var.use_azapi ? format(
     "redis-cli -h %s -p 10000 -a '<primary_key>'",
-    jsondecode(data.azapi_resource.cluster_data[0].output).properties.hostName
+    data.azapi_resource.cluster_data[0].output.properties.hostName
     ) : format(
     "redis-cli -h %s -p 10000 -a '<primary_key>'",
     azurerm_managed_redis.cluster[0].hostname
@@ -114,7 +114,7 @@ output "redis_cli_command" {
 output "test_connection_info" {
   description = "Information for testing the Redis connection"
   value = var.use_azapi ? {
-    hostname = jsondecode(data.azapi_resource.cluster_data[0].output).properties.hostName
+    hostname = data.azapi_resource.cluster_data[0].output.properties.hostName
     port     = 10000
     modules  = var.modules
     } : {
