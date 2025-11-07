@@ -363,7 +363,7 @@ terraform apply
 | 📦 Component | 📋 Version |
 |-------------|-----------|
 | [Terraform](https://www.terraform.io/) | `>= 1.3` |
-| [AzAPI Provider](https://registry.terraform.io/providers/Azure/azapi/latest) | `~> 1.15` |
+| [AzAPI Provider](https://registry.terraform.io/providers/Azure/azapi/latest) | `~> 2.0` |
 | [AzureRM Provider](https://registry.terraform.io/providers/hashicorp/azurerm/latest) | `~> 4.50` |
 
 ### Common Use Cases
