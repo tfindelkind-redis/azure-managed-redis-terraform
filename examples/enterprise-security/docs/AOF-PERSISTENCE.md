@@ -1,76 +1,20 @@
 # AOF Persistence Configuration for Azure Managed Redis
 
-## Current Status (azurerm v4.50)
+## Current Status (April 2026)
 
-### ✅ High Availability
-**Status**: Fully supported in Terraform  
-**Configuration**: 
-```hcl
-resource "azurerm_managed_redis" "main" {
-  # ... other settings ...
-  
-  high_availability_enabled = true  # ← Supported!
-}
-```
+### ✅ All Persistence Features Now Supported in AzureRM
 
-### ❌ AOF Persistence  
-**Status**: NOT YET supported in azurerm provider (as of v4.50.0)  
-**Reason**: The Azure ARM API supports AOF, but the Terraform provider hasn't exposed it yet
+**As of AzureRM v4.54.0 (November 2025)**, both RDB and AOF persistence are fully supported:
 
-## Evidence
+| Feature | AzureRM Version | Status |
+|---------|-----------------|--------|
+| High Availability | v4.50.0+ | ✅ Supported |
+| RDB Persistence | v4.54.0+ | ✅ Supported |
+| AOF Persistence | v4.54.0+ | ✅ Supported |
 
-From the provider source code:
-```go
-// Persistence is currently preview and does not return from the RP 
-// but will be fully supported in the near future
-```
+## Configuration Examples
 
-## Workarounds for AOF Persistence
-
-Since AOF persistence is not available in the azurerm provider, you have these options:
-
-### Option 1: Azure CLI Post-Deployment (Recommended)
-
-After deploying with Terraform, configure AOF via Azure CLI:
-
-```bash
-# After terraform apply
-az redisenterprise database update \
-  --cluster-name "my-redis-cluster" \
-  --resource-group "my-rg" \
-  --name "default" \
-  --persistence aof-enabled=true aof-frequency=1s
-```
-
-**Add to deployment script:**
-```bash
-# In deploy-modular.sh after Redis deployment:
-REDIS_NAME=$(terraform output -raw cluster_name)
-RG_NAME=$(terraform output -raw resource_group_name)
-
-echo "Configuring AOF persistence..."
-az redisenterprise database update \
-  --cluster-name "$REDIS_NAME" \
-  --resource-group "$RG_NAME" \
-  --name "default" \
-  --persistence aof-enabled=true aof-frequency=1s
-```
-
-### Option 2: Azure Portal (Manual)
-
-1. Navigate to your Redis Enterprise instance
-2. Go to **Advanced settings**
-3. Under **Data Persistence**, select **AOF**
-4. Choose **1 second** frequency
-5. Click **Save**
-
-### Option 3: Wait for Provider Update
-
-Monitor the azurerm provider releases for AOF support:
-- GitHub: https://github.com/hashicorp/terraform-provider-azurerm
-- Changelog: https://github.com/hashicorp/terraform-provider-azurerm/blob/main/CHANGELOG.md
-
-## Current Configuration (redis.tf)
+### AzureRM Provider (v4.54.0+)
 
 ```hcl
 resource "azurerm_managed_redis" "main" {
@@ -79,45 +23,98 @@ resource "azurerm_managed_redis" "main" {
   location            = var.location
   sku_name            = var.sku_name
 
-  # ✅ HIGH AVAILABILITY - Fully supported
   high_availability_enabled = true
 
-  # Managed Identity Assignment
-  identity {
-    type = "UserAssigned"
-    identity_ids = [
-      azurerm_user_assigned_identity.redis.id,
-      azurerm_user_assigned_identity.keyvault.id
-    ]
-  }
-
-  # Customer Managed Key Encryption
-  customer_managed_key {
-    key_vault_key_id          = azurerm_key_vault_key.redis.id
-    user_assigned_identity_id = azurerm_user_assigned_identity.keyvault.id
-  }
-
-  # Default Database Configuration
   default_database {
     client_protocol   = "Encrypted"
     clustering_policy = "EnterpriseCluster"
     eviction_policy   = "NoEviction"
 
-    # ❌ AOF PERSISTENCE - Not yet supported in provider
-    # Will need to be configured via Azure CLI or Portal
-    # after deployment
+    # ✅ AOF Persistence - Supported since v4.54.0
+    persistence_append_only_file_backup_frequency = "1s"
 
-    dynamic "module" {
-      for_each = var.enable_modules ? ["RedisJSON", "RediSearch"] : []
-      content {
-        name = module.value
-      }
-    }
+    # ✅ RDB Persistence - Also supported
+    persistence_redis_database_backup_frequency = "12h"
   }
 
   tags = var.tags
 }
 ```
+
+### AzAPI Provider (Alternative)
+
+```hcl
+resource "azapi_resource" "redis" {
+  type      = "Microsoft.Cache/redisEnterprise@2024-10-01"
+  name      = var.redis_name
+  parent_id = azurerm_resource_group.main.id
+  location  = var.location
+
+  body = {
+    sku = {
+      name     = var.sku_name
+      capacity = 2
+    }
+    properties = {
+      highAvailability = "Enabled"
+    }
+  }
+}
+
+resource "azapi_resource" "redis_database" {
+  type      = "Microsoft.Cache/redisEnterprise/databases@2024-10-01"
+  name      = "default"
+  parent_id = azapi_resource.redis.id
+
+  body = {
+    properties = {
+      clientProtocol   = "Encrypted"
+      clusteringPolicy = "EnterpriseCluster"
+      evictionPolicy   = "NoEviction"
+      persistence = {
+        aofEnabled       = true
+        aofFrequency     = "1s"
+        rdbEnabled       = true
+        rdbFrequency     = "12h"
+      }
+    }
+  }
+}
+```
+
+## AOF vs RDB Comparison
+
+| Aspect | AOF (Append-Only File) | RDB (Snapshots) |
+|--------|------------------------|-----------------|
+| **Durability** | Highest (logs every write) | Lower (periodic snapshots) |
+| **Performance Impact** | Higher I/O overhead | Lower overhead |
+| **Recovery Speed** | Slower (replays log) | Faster (loads snapshot) |
+| **Best For** | Maximum data safety | Faster restarts, backups |
+
+## Recommended Configuration
+
+For production workloads requiring durability, use **both** persistence methods:
+
+```hcl
+default_database {
+  persistence_append_only_file_backup_frequency = "1s"   # AOF for durability
+  persistence_redis_database_backup_frequency   = "12h"  # RDB for faster restarts
+}
+```
+
+## Migration from Workarounds
+
+If you previously used Azure CLI or Portal to configure persistence as a workaround, you can now manage it directly in Terraform:
+
+1. Update your `azurerm` provider to `>= 4.54.0`
+2. Add the persistence properties to your `default_database` block
+3. Run `terraform plan` to verify changes
+4. Run `terraform apply` to update the state
+
+## References
+
+- [AzureRM 4.54.0 Release Notes](https://github.com/hashicorp/terraform-provider-azurerm/releases/tag/v4.54.0)
+- [Azure Managed Redis Documentation](https://learn.microsoft.com/azure/azure-cache-for-redis/managed-redis/)
 
 ## Recommended Approach
 

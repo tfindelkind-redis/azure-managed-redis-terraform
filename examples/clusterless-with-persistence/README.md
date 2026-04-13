@@ -76,10 +76,21 @@ module "redis_clusterless" {
   # High availability
   high_availability = true
   
-  # Must use AzAPI for persistence features
-  use_azapi = true
+  # Either provider works (AzureRM 4.54+ supports persistence)
+  use_azapi = true  # or false for AzureRM
 }
 ```
+
+## Provider Support
+
+As of April 2026, both providers fully support persistence:
+
+| Provider | Minimum Version | Support |
+|----------|-----------------|---------|
+| **AzureRM** | 4.54.0 (Nov 2025) | ✅ Full RDB/AOF support |
+| **AzAPI** | Any | ✅ Full support |
+
+You can use `use_azapi = false` to use the AzureRM provider if you prefer native Terraform resources.
 
 ## Persistence Options
 

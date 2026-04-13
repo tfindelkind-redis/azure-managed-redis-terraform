@@ -8,7 +8,7 @@ terraform {
     }
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 4.50" # Required for azurerm_managed_redis resource
+      version = "~> 4.60" # Required for azurerm_managed_redis_access_policy_assignment (4.60+)
     }
   }
 }

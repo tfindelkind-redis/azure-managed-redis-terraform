@@ -7,11 +7,16 @@ set -e
 # This script switches between AzAPI and AzureRM providers for the Redis
 # cluster and database resources.
 #
-# IMPORTANT NOTE:
-# - Access policy assignments ALWAYS require AzAPI (azurerm doesn't support them)
-# - This script only switches the provider for Redis cluster/database resources
-# - The azapi provider must remain in versions.tf for access policy assignments
+# PROVIDER SUPPORT (Updated April 2026):
+# - AzureRM 4.60+ now supports ALL features including Access Policy Assignments
+# - You can use either provider for full functionality
+# - AzAPI is still useful for preview features and cutting-edge APIs
 # - For Bicep/ARM deployments, all resources are natively supported
+#
+# FEATURE AVAILABILITY:
+# - Non-Clustered Mode: AzureRM 4.50+ / AzAPI
+# - RDB/AOF Persistence: AzureRM 4.54+ / AzAPI
+# - Access Policy Assignments: AzureRM 4.60+ / AzAPI
 # =============================================================================
 
 # Colors for output

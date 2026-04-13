@@ -90,18 +90,25 @@ resource "azurerm_user_assigned_identity" "redis" {
 }
 ```
 
-#### 2. Access Policy Assignment (Terraform with AzAPI)
+#### 2. Access Policy Assignment (Terraform)
 
 **CRITICAL:** The Azure Managed Redis access policy API is different from Azure Cache for Redis.
 
+**Option 1: AzureRM Provider (v4.60.0+)**
 ```hcl
-# Required: AzAPI provider (azurerm doesn't support this yet)
+resource "azurerm_managed_redis_access_policy_assignment" "app_identity" {
+  managed_redis_id = module.redis.cluster_id
+  object_id        = azurerm_user_assigned_identity.redis.principal_id
+}
+```
+
+**Option 2: AzAPI Provider (all versions)**
+```hcl
 resource "azapi_resource" "redis_access_policy" {
   type      = "Microsoft.Cache/redisEnterprise/databases/accessPolicyAssignments@2024-10-01"
   name      = "app-managed-identity"
   parent_id = azurerm_managed_redis.main.database_id
   
-  # Must disable schema validation as the resource type is not in the provider's schema yet
   schema_validation_enabled = false
 
   body = jsonencode({
@@ -119,7 +126,8 @@ resource "azapi_resource" "redis_access_policy" {
 - ✅ Access policy name must be `"default"` (not custom names like "Data Contributor")
 - ✅ User property is a **nested object** with `objectId` (not flat `objectId` + `objectIdAlias`)
 - ✅ **Bicep/ARM**: Fully supported via native `Microsoft.Cache/redisEnterprise/databases/accessPolicyAssignments` resource
-- ✅ **Terraform**: Must use AzAPI provider (azurerm doesn't support this resource type as of v4.x)
+- ✅ **Terraform azurerm**: Supported since v4.60.0 (Feb 2026) via `azurerm_managed_redis_access_policy_assignment`
+- ✅ **Terraform AzAPI**: Supported via `azapi_resource`
 - ✅ Resource type is under `/databases/` path (not directly under cluster)
 
 **For Bicep/ARM users:**
@@ -433,10 +441,10 @@ Azure Managed Redis vs Azure Cache for Redis have **different APIs**:
 | Object structure | `objectId` + `objectIdAlias` (flat) | `user { objectId }` (nested) |
 | Resource path | `/redis/{cache}/accessPolicyAssignments` | `/redisEnterprise/{cluster}/databases/{db}/accessPolicyAssignments` |
 | Bicep/ARM | azurerm_redis_cache_access_policy_assignment | Microsoft.Cache/redisEnterprise/databases/accessPolicyAssignments |
-| Terraform azurerm | Supported | **NOT supported (as of v4.x - Jan 2025)** |
-| Terraform AzAPI | N/A | **Required for Terraform users** |
+| Terraform azurerm | Supported | **Supported (v4.60.0+, Feb 2026)** via `azurerm_managed_redis_access_policy_assignment` |
+| Terraform AzAPI | N/A | **Supported** via `azapi_resource` |
 
-**Important Note**: While Bicep/ARM and Azure CLI fully support access policy assignments for Azure Managed Redis natively, the HashiCorp `azurerm` Terraform provider does not yet include this resource type. Terraform users must use the `azapi` provider as a workaround.
+**Note**: Both Terraform providers now fully support all Azure Managed Redis features. Bicep/ARM and Azure CLI also support access policy assignments natively.
 
 ---
 

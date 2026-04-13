@@ -8,11 +8,11 @@ This example includes a **Python test application** deployed to Azure App Servic
 
 ![Enterprise Security Test App](img/testapp.png)
 
-> **✅ Provider Flexibility**: 
+> **✅ Provider Flexibility (Updated April 2026)**: 
 > - **Redis cluster/database**: Supports both AzureRM and AzAPI providers (configured via `use_azapi` variable)
-> - **Access policy assignments**: Require AzAPI for Terraform users (azurerm doesn't support this resource type yet)
+> - **Access policy assignments**: AzureRM 4.60+ now supports via `azurerm_managed_redis_access_policy_assignment` (Feb 2026)
 > - **Bicep/ARM users**: All resources fully supported via native ARM resource types - no workarounds needed!
-> - Currently configured to use **AzAPI** (`use_azapi = true`) for complete feature support with the latest Azure API
+> - Either provider can now be used for complete feature support
 
 ## 🔐 Security Features
 
@@ -210,13 +210,13 @@ This example uses the **managed-redis module** which supports both AzureRM and A
 - ✅ **AzAPI provider**: Supported (use `use_azapi = true`)
 
 **Access Policy Assignments (required for EntraID auth):**
-- ❌ **AzureRM provider**: NOT supported (as of v4.x - Jan 2025)
-- ✅ **AzAPI provider**: REQUIRED - must always use AzAPI
+- ✅ **AzureRM provider**: Supported since v4.60.0 (Feb 2026) via `azurerm_managed_redis_access_policy_assignment`
+- ✅ **AzAPI provider**: Supported via `azapi_resource`
 
 This means:
-- You can choose between `azurerm` or `azapi` for the main Redis resources
-- Access policy assignments (`redis-access-policy.tf`) **always require AzAPI**
-- The `azapi` provider must be included in your `versions.tf` regardless of your choice
+- Both providers now fully support all Redis Enterprise features
+- You can use either provider for the complete deployment
+- See `redis-access-policy.tf` for examples of both approaches
 
 ##### For Bicep/ARM Users:
 

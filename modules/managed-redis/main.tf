@@ -129,7 +129,12 @@ data "azapi_resource_action" "database_keys" {
 }
 
 # ==============================================================================
-# Native AzureRM Implementation (v4.50+)
+# Native AzureRM Implementation (v4.60+)
+# ==============================================================================
+# As of April 2026, AzureRM supports all major features:
+# - Non-Clustered Mode (4.50+)
+# - RDB/AOF Persistence (4.54+)
+# - Access Policy Assignments (4.60+)
 # ==============================================================================
 
 # Redis Managed cluster and database (AzureRM Implementation)
@@ -165,6 +170,12 @@ resource "azurerm_managed_redis" "cluster" {
     client_protocol                    = var.client_protocol
     clustering_policy                  = var.clustering_policy
     eviction_policy                    = var.eviction_policy
+
+    # Persistence configuration (AzureRM 4.54+)
+    # Note: RDB and AOF are mutually exclusive - only one can be enabled at a time
+    # Note: Persistence conflicts with geo-replication
+    persistence_append_only_file_backup_frequency  = var.persistence_aof_enabled ? "1s" : null
+    persistence_redis_database_backup_frequency    = var.persistence_rdb_enabled ? "1h" : null
 
     # Enable modules if specified
     dynamic "module" {

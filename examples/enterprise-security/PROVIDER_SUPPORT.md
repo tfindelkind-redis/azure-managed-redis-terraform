@@ -4,28 +4,34 @@ This document clarifies the provider support for deploying Azure Managed Redis (
 
 ## 📊 Support Matrix
 
+**Updated: April 2026**
+
 | Component | Terraform azurerm | Terraform AzAPI | Bicep/ARM | Azure CLI |
 |-----------|-------------------|-----------------|-----------|-----------|
-| **Redis Cluster** | ✅ Supported | ✅ Supported | ✅ Supported | ✅ Supported |
-| **Redis Database** | ✅ Supported | ✅ Supported | ✅ Supported | ✅ Supported |
-| **Access Policy Assignment** | ❌ **NOT Supported** | ✅ **REQUIRED** | ✅ Supported | ✅ Supported |
+| **Redis Cluster** | ✅ 4.50.0+ | ✅ Supported | ✅ Supported | ✅ Supported |
+| **Redis Database** | ✅ 4.50.0+ | ✅ Supported | ✅ Supported | ✅ Supported |
+| **NoCluster Mode** | ✅ 4.50.0+ | ✅ Supported | ✅ Supported | ✅ Supported |
+| **RDB/AOF Persistence** | ✅ 4.54.0+ | ✅ Supported | ✅ Supported | ✅ Supported |
+| **Access Policy Assignment** | ✅ **4.60.0+** | ✅ Supported | ✅ Supported | ✅ Supported |
 | **RBAC Role Assignment** | ✅ Supported | ✅ Supported | ✅ Supported | ✅ Supported |
 
 ## 🎯 Key Takeaways
 
 ### For Terraform Users
 
-**You have flexibility for Redis cluster/database:**
-- Choose `use_azapi = true` (recommended) OR
-- Choose `use_azapi = false` (using azurerm)
+**Full AzureRM Support (v4.60.0+):**
+As of February 2026, the AzureRM provider now supports ALL Azure Managed Redis features:
+- ✅ `azurerm_managed_redis` (since v4.50.0)
+- ✅ NoCluster mode (since v4.50.0)
+- ✅ RDB/AOF Persistence (since v4.54.0)
+- ✅ `azurerm_managed_redis_access_policy_assignment` (since v4.60.0)
 
-**Access policy assignments are MANDATORY for AzAPI:**
-- The `azapi` provider MUST be in your `versions.tf`
-- The `redis-access-policy.tf` file ALWAYS uses `azapi_resource`
-- This is a Terraform limitation, not an Azure limitation
+**Complete flexibility - choose either provider:**
+- Use `use_azapi = false` for pure azurerm deployment
+- Use `use_azapi = true` for azapi (useful for preview API features)
 
-**Why the limitation?**
-The HashiCorp `azurerm` provider (as of v4.x in January 2025) does not include the `Microsoft.Cache/redisEnterprise/databases/accessPolicyAssignments` resource type. The Azure API supports it, but the Terraform provider doesn't expose it yet.
+**Historical Note:**
+Prior to v4.60.0 (released February 12, 2026), access policy assignments required the AzAPI provider. This limitation has been resolved.
 
 ### For Bicep/ARM Users
 
@@ -72,32 +78,32 @@ az redisenterprise database access-policy-assignment create \
 
 ### Current Setup
 
-- **Redis Cluster/Database**: Using AzAPI (`use_azapi = true`)
-- **Access Policy Assignment**: Using AzAPI (required)
+- **Redis Cluster/Database**: Using AzAPI (`use_azapi = true`) - can also use azurerm
+- **Access Policy Assignment**: Using AzAPI - can also use azurerm (v4.60.0+)
 - **RBAC Role Assignment**: Using azurerm
 
 ### Can I Switch to azurerm?
 
-**Yes, partially!** You can switch the Redis cluster/database to azurerm:
+**Yes, fully!** You can now switch the entire deployment to azurerm:
 
 ```bash
 ./switch-provider.sh to-azurerm
 ```
 
-But the access policy assignment (`redis-access-policy.tf`) will continue to use AzAPI because azurerm doesn't support it.
+With AzureRM 4.60.0+, you can also use `azurerm_managed_redis_access_policy_assignment` for access policies. See `redis-access-policy.tf` for examples of both approaches.
 
 ### Required Providers
 
-Regardless of your choice for Redis resources, your `versions.tf` must include:
+With AzureRM 4.60.0+, you can use either provider:
 
 ```hcl
 terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = ">= 4.0"
+      version = "~> 4.60"  # Required for access policy assignments
     }
-    azapi = {  # REQUIRED for access policy assignments
+    azapi = {  # Optional - for preview features or legacy compatibility
       source  = "azure/azapi"
       version = "~> 1.15"
     }
@@ -112,11 +118,9 @@ terraform {
 
 | Resource Type | Terraform azurerm | Terraform AzAPI | Bicep/ARM |
 |---------------|-------------------|-----------------|-----------|
-| `Microsoft.Cache/redisEnterprise` | `azurerm_redis_enterprise_cluster` | `azapi_resource` | Native |
-| `Microsoft.Cache/redisEnterprise/databases` | `azurerm_redis_enterprise_database` | `azapi_resource` | Native |
-| `Microsoft.Cache/redisEnterprise/databases/accessPolicyAssignments` | ❌ Not available | `azapi_resource` | Native |
-
-### Azure Cache for Redis (Classic SKUs)
+| `Microsoft.Cache/redisEnterprise` | `azurerm_managed_redis` (v4.50+) | `azapi_resource` | Native |
+| `Microsoft.Cache/redisEnterprise/databases` | `azurerm_managed_redis` (inline) | `azapi_resource` | Native |
+| `Microsoft.Cache/redisEnterprise/databases/accessPolicyAssignments` | `azurerm_managed_redis_access_policy_assignment` (v4.60+) | `azapi_resource` | Native |
 
 For comparison, the classic Azure Cache for Redis has full support across all tools:
 
@@ -135,32 +139,38 @@ When working with access policies, note these critical differences:
 | **Object Structure** | Flat: `objectId` + `objectIdAlias` | Nested: `user { objectId }` |
 | **Resource Path** | `/redis/{cache}/accessPolicyAssignments` | `/redisEnterprise/{cluster}/databases/{db}/accessPolicyAssignments` |
 
-## 🔮 Future Outlook
+## 🔮 Current Status (April 2026)
 
-The `azurerm` provider is actively maintained by HashiCorp. It's likely that support for access policy assignments will be added in a future version. When that happens:
+**All features now supported in AzureRM!**
 
-1. ✅ You'll be able to use native `azurerm` resources
-2. ✅ Existing AzAPI configurations will continue to work
-3. ✅ Migration will be straightforward (just update resource type)
+The `azurerm` provider has caught up with full Azure Managed Redis support:
 
-For now, AzAPI provides a fully supported workaround that works perfectly with the Azure API.
+| Feature | Version Added | Resource |
+|---------|---------------|----------|
+| Managed Redis (NoCluster) | v4.50.0 (Oct 2025) | `azurerm_managed_redis` |
+| RDB/AOF Persistence | v4.54.0 (Nov 2025) | Properties in `azurerm_managed_redis` |
+| Access Policy Assignments | v4.60.0 (Feb 2026) | `azurerm_managed_redis_access_policy_assignment` |
+
+Both providers remain valid options:
+- **AzureRM**: Recommended for stable production deployments
+- **AzAPI**: Useful when you need preview API versions or new features before azurerm support
 
 ## ❓ FAQ
 
-**Q: Why can't I use azurerm for access policies?**  
-A: The HashiCorp azurerm provider hasn't added this resource type yet. It's a provider limitation, not an Azure limitation.
+**Q: Which provider should I use?**  
+A: For new deployments, AzureRM 4.60+ provides native support for all features. Use AzAPI if you need preview API versions.
 
-**Q: Is AzAPI production-ready?**  
-A: Yes! AzAPI is officially maintained by Microsoft and is production-ready. It's specifically designed for accessing Azure features before they're available in azurerm.
+**Q: How do I migrate from AzAPI to AzureRM for access policies?**  
+A: Replace `azapi_resource` with `azurerm_managed_redis_access_policy_assignment`. See `redis-access-policy.tf` for examples.
 
-**Q: Will my code break when azurerm adds support?**  
-A: No. You can continue using AzAPI, or migrate to native azurerm resources when available.
+**Q: Is AzAPI still production-ready?**  
+A: Yes! AzAPI is officially maintained by Microsoft and remains production-ready. It's useful for preview features.
 
 **Q: Should I use Bicep instead of Terraform?**  
-A: That depends on your requirements. Bicep has native support for all Azure features immediately. Terraform provides cross-cloud capabilities. Both are excellent choices.
+A: That depends on your requirements. Both now have full feature support for Azure Managed Redis. Choose based on your team's preferences and tooling.
 
-**Q: Can I contribute to add this to azurerm?**  
-A: Yes! The azurerm provider is open source. You can open an issue or PR: https://github.com/hashicorp/terraform-provider-azurerm
+**Q: Will my existing AzAPI code still work?**  
+A: Yes! AzAPI configurations continue to work. Migration to azurerm is optional.
 
 ## 📖 References
 

@@ -34,7 +34,7 @@ module "redis_clusterless" {
   eviction_policy = "AllKeysLRU"
   modules         = ["RedisJSON", "RediSearch"]
 
-  # Provider - MUST use AzAPI for persistence
+  # Provider selection - Both AzAPI and AzureRM (4.54+) support persistence
   use_azapi = var.use_azapi
 
   tags = var.tags

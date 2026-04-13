@@ -63,11 +63,11 @@ variable "tags" {
 # Provider Selection
 # ============================================================================
 # Note: The main Redis module supports both azurerm and azapi providers.
-# However, access policy assignments ALWAYS require azapi for Terraform users
-# (they work natively in Bicep/ARM).
+# Since AzureRM 4.60.0+ (Feb 2026), access policy assignments are also supported
+# via azurerm_managed_redis_access_policy_assignment resource.
 
 variable "use_azapi" {
-  description = "Use AzAPI provider instead of AzureRM for Redis cluster/database resources. Access policy assignments always require AzAPI for Terraform (azurerm doesn't support this resource type yet)."
+  description = "Use AzAPI provider instead of AzureRM for Redis cluster/database resources. Both providers now support all features including access policy assignments (azurerm 4.60.0+)."
   type        = bool
   default     = true
 }

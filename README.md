@@ -13,23 +13,29 @@ A comprehensive Terraform module for Azure Managed Redis (Redis Enterprise) that
 
 ## 🎯 Why This Module?
 
-While the native AzureRM provider now supports Azure Managed Redis, **critical enterprise features are still missing**:
+### AzureRM Provider Support (Updated April 2026)
 
-| Feature | AzureRM Provider | This Module (AzAPI) | Enterprise Need |
-|---------|------------------|---------------------|-----------------|
-| **Non-Clustered Mode** | ❌ Not supported | ✅ Fully supported | True non-clustered deployments (≤25 GB, Preview) |
-| **RDB Persistence** | ❌ Not supported | ✅ Fully supported | Point-in-time backup & recovery |
-| **AOF Persistence** | ❌ Not supported | ✅ Fully supported | Maximum data durability |
-| **Access Policy Assignments** | ❌ Not supported | ✅ Fully supported | Entra ID authentication & authorization |
-| **Managed Identity** | ✅ Supported | ✅ Fully supported | Secure authentication without passwords |
-| **Customer Managed Keys** | ✅ Supported | ✅ Fully supported | Encryption with your own keys |
+Great news! The AzureRM provider has significantly improved its Azure Managed Redis support:
 
-**This module bridges the gap** by:
-- ✅ **Always up-to-date**: Access new Azure features immediately via AzAPI
-- ✅ **Dual provider support**: Use AzureRM for standard features, AzAPI for advanced ones
+| Feature | AzureRM Provider | This Module (AzAPI) | First Available |
+|---------|------------------|---------------------|------------------|
+| **Non-Clustered Mode** | ✅ Supported (4.50+) | ✅ Fully supported | Oct 2025 |
+| **RDB Persistence** | ✅ Supported (4.54+) | ✅ Fully supported | Nov 2025 |
+| **AOF Persistence** | ✅ Supported (4.54+) | ✅ Fully supported | Nov 2025 |
+| **Access Policy Assignments** | ✅ Supported (4.60+) | ✅ Fully supported | Feb 2026 |
+| **Managed Identity** | ✅ Supported | ✅ Fully supported | Oct 2025 |
+| **Customer Managed Keys** | ✅ Supported | ✅ Fully supported | Oct 2025 |
+
+> **Note**: Requires `azurerm ~> 4.60` for full feature support including Access Policy Assignments.
+
+**This module provides value** by:
+- ✅ **Dual provider support**: Choose between AzAPI (cutting-edge) and AzureRM (stable) providers
+- ✅ **Always up-to-date**: Access preview features immediately via AzAPI
 - ✅ **Complete feature set**: All Azure Managed Redis capabilities in one module
-- ✅ **Future-proof**: Seamlessly switch providers as AzureRM catches up
+- ✅ **Seamless switching**: Switch between providers without changing your configuration
 - ✅ **Production-ready**: Battle-tested with comprehensive examples and CI/CD
+
+> **Recommendation**: As of April 2026, you can now use `use_azapi = false` for most deployments since AzureRM (4.60+) supports all major features.
 
 ## ⭐ Features
 
