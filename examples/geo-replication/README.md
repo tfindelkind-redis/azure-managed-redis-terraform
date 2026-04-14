@@ -45,6 +45,50 @@ This example demonstrates deploying Azure Managed Redis with active geo-replicat
 - **Access Control**: Individual access keys per cluster
 - **Compliance Tags**: Environment and criticality tagging
 
+## Provider Support (Updated April 2026)
+
+Both AzAPI and AzureRM providers now fully support geo-replication:
+
+| Feature | AzureRM (4.61+) | AzAPI |
+|---------|-----------------|-------|
+| `geo_replication_group_name` in `default_database` | ✅ | ✅ |
+| `azurerm_managed_redis_geo_replication` resource | ✅ | N/A |
+| 3+ cluster geo-replication | ✅ (fixed in 4.61) | ✅ |
+| Data source for existing resources | ✅ | ✅ |
+
+### Using AzureRM Geo-Replication Resource
+
+For explicit geo-replication management, use the dedicated `azurerm_managed_redis_geo_replication` resource:
+
+```hcl
+# Create individual clusters first
+resource "azurerm_managed_redis" "primary" {
+  name     = "redis-primary"
+  location = "North Europe"
+  sku_name = "Balanced_B3"
+
+  default_database {
+    geo_replication_group_name = "my-geo-group"
+  }
+}
+
+resource "azurerm_managed_redis" "secondary" {
+  name     = "redis-secondary" 
+  location = "West Europe"
+  sku_name = "Balanced_B3"
+
+  default_database {
+    geo_replication_group_name = "my-geo-group"
+  }
+}
+
+# Link clusters using the geo-replication resource
+resource "azurerm_managed_redis_geo_replication" "link" {
+  managed_redis_id        = azurerm_managed_redis.primary.id
+  linked_managed_redis_id = azurerm_managed_redis.secondary.id
+}
+```
+
 ## Deployment
 
 ### 1. Basic Geo-Replication Setup

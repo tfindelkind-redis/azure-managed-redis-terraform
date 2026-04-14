@@ -523,21 +523,23 @@ Use the centralized switch script in any example:
 
 ### When to Use Each Provider
 
-**Use AzAPI for maximum feature coverage:**
-- ✅ All features supported (persistence, geo-replication, zones, identity, CMK)
-- ✅ Latest API features immediately available
-- ✅ All clustering policies (EnterpriseCluster, OSSCluster, NoCluster)
-- ✅ Defer upgrade control
-- ✅ Recommended for new deployments
+**Use AzAPI when you need:**
+- ✅ Preview API features immediately available
+- ✅ Direct control over API versions
+- ✅ Schema-less flexibility for new features
+- ✅ Recommended when tracking latest Azure capabilities
 
-**Use AzureRM for native Terraform experience:**
-- ✅ Basic features (clustering, HA, modules)
-- ✅ Managed Identity and Customer Managed Keys
+**Use AzureRM (4.60+) for:**
+- ✅ All core features (persistence, geo-replication, zones, identity, CMK)
+- ✅ Access Policy Assignments (Entra ID auth)
 - ✅ Native Terraform resource experience
-- ✅ Good for simpler deployments
-- ❌ Missing: Persistence, Geo-replication, Zones, NoCluster mode, Access Policy Assignments
+- ✅ In-place SKU scaling (v4.61+)
+- ✅ Geo-replication management via `azurerm_managed_redis_geo_replication`
+- ✅ Recommended for stable production deployments
 
-**Best Practice:** Start with AzAPI (`use_azapi = true`) for complete feature coverage. You can switch anytime!
+**Both providers now support all major features!** Choose based on your preference for native Terraform resources (AzureRM) vs. immediate access to preview features (AzAPI).
+
+**Best Practice:** For production deployments, `use_azapi = false` (AzureRM) is now recommended as it provides full feature support with native Terraform resources.
 
 ### �🔐 Authentication Setup only for Github Workflows
 Choose your preferred authentication method:
@@ -578,6 +580,43 @@ This script:
 All 6 examples are tested automatically in CI/CD pipelines.
 
 ## 📖 Additional Resources
+
+### New in AzureRM 4.61+ (February-April 2026)
+
+| Feature | Version | Description |
+|---------|---------|-------------|
+| **In-Place SKU Scaling** | 4.61.0 | Scale `sku_name` without recreation (subject to Azure restrictions) |
+| **`azurerm_managed_redis_geo_replication`** | 4.61.0+ | Dedicated resource for geo-replication group management |
+| **`data.azurerm_managed_redis`** | 4.60.0 | Data source to read existing Managed Redis instances |
+| **`data.azurerm_managed_redis_access_policy_assignment`** | 4.60.0 | Data source for access policy lookups |
+| **3+ Cluster Geo-Replication** | 4.61.0 | Bug fix allows linking 3+ clusters in geo-replication |
+| **Database Flush Action** | 4.61.0+ | `azurerm_managed_redis_databases_flush` action for cache clearing |
+
+#### SKU Scaling Example
+
+```hcl
+# Scale from B3 to B5 without recreation (if Azure allows)
+resource "azurerm_managed_redis" "example" {
+  sku_name = "Balanced_B5"  # Changed from Balanced_B3
+  # ... other config unchanged
+}
+```
+
+> **Note**: Downgrading SKU may force recreation. See [Azure scaling documentation](https://learn.microsoft.com/en-us/azure/redis/how-to-scale)
+
+#### Using Data Sources
+
+```hcl
+# Read existing Managed Redis instance
+data "azurerm_managed_redis" "existing" {
+  name                = "my-redis"
+  resource_group_name = "my-rg"
+}
+
+output "hostname" {
+  value = data.azurerm_managed_redis.existing.hostname
+}
+```
 
 ### Documentation
 - [Feature Support Matrix](FEATURE-SUPPORT.md) - Comprehensive feature documentation
