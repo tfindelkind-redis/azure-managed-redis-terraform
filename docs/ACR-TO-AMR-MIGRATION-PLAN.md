@@ -56,12 +56,12 @@ Azure Cache for Redis (ACR) has announced retirement for all SKUs. This document
 | VNet Injection | 🟡 **HIGH** | ACR Premium deploys Redis inside your VNet subnet; AMR does NOT - must migrate to Private Link |
 | DNS/Port | 🟡 **HIGH** | Hostname suffix and port numbers change |
 | TLS Mode | 🟡 **HIGH** | ACR supports both TLS/non-TLS simultaneously; AMR is TLS-only (no non-TLS port) |
-| Scaling | 🟡 **HIGH** | AMR does NOT support scaling down or scaling in (only up/out) |
+| Scaling | 🟡 **HIGH** | AMR can scale down only to compatible SKUs (check with `az redisenterprise list-skus-for-scaling`); geo-replicated caches cannot scale down |
 | Region Availability | 🟡 **HIGH** | AMR not available in all regions where ACR exists |
 | IP Firewall Rules | 🟡 **HIGH** | ACR supports IP-based firewall rules; AMR does NOT - use Private Link + NSG |
 | IaC/Terraform | 🟡 **HIGH** | Resource types change: `azurerm_redis_cache` → `azurerm_redis_enterprise_cluster` + `azurerm_redis_enterprise_database` |
 | Private DNS Zones | 🟡 **MEDIUM** | ACR: `privatelink.redis.cache.windows.net`; AMR: `privatelink.redis.azure.net` |
-| Keyspace Notifications | 🟡 **MEDIUM** | Not available in AMR; requires application redesign if used |
+| Keyspace Notifications | 🟡 **MEDIUM** | ACR Standard/Premium: ✅ configurable; AMR: ❌ not available - requires application redesign |
 | High Availability | 🟢 **ADVANTAGE** | ACR Standard/Premium/Enterprise: HA always on; AMR: HA is optional (cost savings for dev/test) |
 
 **Authentication & RBAC Feature Matrix:**
@@ -706,7 +706,7 @@ If you're currently using VNet Injection, you must:
 #### 12.2 Runbook Updates
 - [ ] Update operational runbooks for:
   - [ ] Instance provisioning
-  - [ ] Scaling procedures (**Note**: AMR does NOT support scaling down or in - only up/out)
+  - [ ] Scaling procedures (**Note**: AMR can scale down only to compatible SKUs; geo-replicated caches cannot scale down. Use `az redisenterprise list-skus-for-scaling` to check options)
   - [ ] Failover procedures (different in AMR)
   - [ ] Backup/restore procedures
   - [ ] Troubleshooting guides
@@ -897,13 +897,16 @@ resource "azurerm_redis_enterprise_database" "example" { ... }
 | Cluster nodes | 13XXX/15XXX | 85XX |
 
 #### 6. Scaling Limitations
-- **Issue**: AMR does NOT support scaling down or scaling in
+- **Issue**: AMR has specific rules for scaling down
 - **ACR Support**: Scale up/down and in/out (Premium clustered)
-- **Impact**: Cannot reduce capacity after deployment
+- **AMR Rules**:
+  - ✅ Scale down allowed if memory usage < target size AND target SKU is compatible
+  - ❌ Geo-replicated caches cannot scale down to smaller memory or shard count
+  - Use `az redisenterprise list-skus-for-scaling` to check available scale-down options
 - **Resolution**:
   - Right-size carefully during initial deployment
-  - Use metrics to size appropriately before migration
-  - Over-provisioning is safer but costs more
+  - Use metrics to verify memory usage before scaling down
+  - For geo-replicated caches, plan capacity carefully as scale-down is blocked
 
 #### 7. DNS Suffix Changes
 - **ACR**: `<name>.redis.cache.windows.net`
@@ -917,10 +920,16 @@ resource "azurerm_redis_enterprise_database" "example" { ... }
 - **Resolution**: Use Private Link + NSG + Azure Firewall
 
 #### 9. Keyspace Notifications
-- **Issue**: Not available in AMR
+- **Issue**: ❌ Not available in AMR (verified)
+- **ACR Support**:
+  - **Basic**: ❌ Not available
+  - **Standard/Premium**: ✅ Configurable via `notify-keyspace-events` in Advanced Settings
+  - **Enterprise**: ❌ Not available
+- **What they do**: Allow clients to subscribe to Pub/Sub channels to receive events when keys are modified, expired, or evicted
+- **Common use cases**: Cache invalidation triggers, session expiration notifications, TTL-based workflows
 - **Impact**: Applications relying on key event notifications will need redesign
 - **Resolution**: 
-  - Use Pub/Sub with explicit notifications
+  - Use Pub/Sub with explicit application notifications
   - Implement application-level change tracking
   - Consider event sourcing patterns
 
