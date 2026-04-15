@@ -43,183 +43,191 @@ By the end of this session, you will:
 
 ---
 
-# PART 2: REDIS USE CASES (30 min)
+# PART 2: REDIS - THE REAL-TIME DATA PLATFORM (30 min)
 
 ---
 
-## Slide 2: Why Redis?
+## Slide 2: What is Redis?
 
-### The Speed Problem
+### Redis = The Real-Time Data Platform
 
-| Storage Type | Latency |
-|--------------|---------|
-| SSD Database | 1-10 ms |
-| Network call | 10-100 ms |
-| **Redis (in-memory)** | **<1 ms** |
+> "Redis is an in-memory data store that provides **sub-millisecond latency** for real-time applications"
 
-### Redis = In-Memory Data Store
-- Sub-millisecond response times
-- 1M+ operations/second
-- Rich data structures (not just key-value)
+| Capability | What It Means |
+|------------|---------------|
+| **Speed** | <1ms latency, 1M+ ops/sec |
+| **Versatility** | 10+ data structures, not just key-value |
+| **Real-Time** | Instant reads/writes, pub/sub, streaming |
+| **Simplicity** | Easy APIs, no query language needed |
 
 ---
 
-## Slide 3: Core Redis Use Cases
+## Slide 3: The Real-Time Data Challenge
 
-### 1️⃣ Caching (Most Common)
+### Why Traditional Databases Aren't Enough
 
 ```
-┌─────────┐    ┌─────────┐    ┌──────────┐
-│   App   │───▶│  Redis  │───▶│ Database │
-└─────────┘    └─────────┘    └──────────┘
-                  Cache          Source
-                  <1ms           10-100ms
+User Action → API → Database → Response
+                      ↓
+                   10-100ms ❌
 ```
 
-**Pattern**: Cache-Aside
-- Check Redis first
-- If miss → query DB → store in Redis
-- Reduces DB load by 80-95%
+### Modern User Expectations
+- Gaming: **Instant** leaderboard updates
+- E-commerce: **Real-time** inventory
+- Social: **Live** notifications
+- Finance: **Immediate** fraud detection
+
+**Latency = Lost Revenue + Bad UX**
 
 ---
 
-## Slide 4: Core Redis Use Cases (cont.)
+## Slide 4: Redis as the Speed Layer
 
-### 2️⃣ Session Store
+### The Real-Time Architecture
+
+```
+┌──────────┐     ┌─────────────────────┐     ┌──────────────┐
+│   App    │────▶│   Redis (Speed)     │────▶│   Database   │
+│          │◀────│   <1ms response     │◀────│   (Storage)  │
+└──────────┘     └─────────────────────┘     └──────────────┘
+                 │ Real-time layer      │   │ Source of truth │
+                 │ • Caching            │   │ • Durability     │
+                 │ • Sessions           │   │ • Complex queries│
+                 │ • Leaderboards       │   │ • Analytics      │
+                 │ • Rate limiting      │
+```
+
+---
+
+## Slide 5: Real-Time Use Case: Caching
+
+### Reduce Database Load by 80-95%
 
 ```python
-# Store session (with TTL)
-redis.setex(f"session:{session_id}", 3600, user_data)
-
-# Retrieve session
-user_data = redis.get(f"session:{session_id}")
+def get_product(product_id):
+    # Try cache first
+    cached = redis.get(f"product:{product_id}")
+    if cached:
+        return json.loads(cached)  # <1ms ✅
+    
+    # Cache miss → DB
+    product = db.query(product_id)  # 10-100ms
+    redis.setex(f"product:{product_id}", 3600, json.dumps(product))
+    return product
 ```
 
-**Benefits**:
-- Stateless app servers (scale horizontally)
-- Fast session lookup
-- Automatic expiration
+**Impact**: Faster response + lower DB costs
 
 ---
 
-## Slide 5: Core Redis Use Cases (cont.)
+## Slide 6: Real-Time Use Case: Session Store
 
-### 3️⃣ Real-Time Leaderboards
+### Stateless Apps, Fast Sessions
 
 ```python
-# Add score
-redis.zadd("leaderboard", {"player1": 1500, "player2": 2300})
+# Login: Store session
+redis.setex(f"session:{token}", 3600, json.dumps(user_data))
 
-# Get top 10
-redis.zrevrange("leaderboard", 0, 9, withscores=True)
+# Every request: Validate session
+user = json.loads(redis.get(f"session:{token}"))  # <1ms
 ```
 
-**Why Redis?**
-- Sorted Sets = O(log N) operations
-- Real-time updates
-- No complex SQL queries
+**Why Redis for Sessions?**
+- Scale app servers horizontally
+- Automatic expiration (TTL)
+- Shared across all instances
 
 ---
 
-## Slide 6: Core Redis Use Cases (cont.)
+## Slide 7: Real-Time Use Case: Leaderboards
 
-### 4️⃣ Rate Limiting
+### Instant Rankings with Sorted Sets
 
 ```python
-def is_rate_limited(user_id, limit=100, window=60):
-    key = f"rate:{user_id}"
-    current = redis.incr(key)
-    if current == 1:
-        redis.expire(key, window)
-    return current > limit
+# Update score (real-time)
+redis.zadd("game:leaderboard", {"player42": 15000})
+
+# Get top 10 (instant)
+top_10 = redis.zrevrange("game:leaderboard", 0, 9, withscores=True)
+
+# Get player rank (instant)
+rank = redis.zrevrank("game:leaderboard", "player42")
+```
+
+**O(log N)** - Scales to millions of players
+
+---
+
+## Slide 8: Real-Time Use Case: Rate Limiting
+
+### Protect APIs in Real-Time
+
+```python
+def check_rate_limit(user_id, limit=100, window=60):
+    key = f"rate:{user_id}:{int(time.time()) // window}"
+    count = redis.incr(key)
+    redis.expire(key, window)
+    return count <= limit
 ```
 
 **Use Cases**:
-- API throttling
-- Login attempt limits
-- DDoS protection
+- API throttling (prevent abuse)
+- Login protection (brute force)
+- Feature flags (gradual rollout)
 
 ---
 
-## Slide 7: Core Redis Use Cases (cont.)
+## Slide 9: Real-Time Use Case: Pub/Sub & Streams
 
-### 5️⃣ Pub/Sub & Messaging
+### Event-Driven Architecture
 
 ```python
-# Publisher
-redis.publish("notifications", json.dumps(event))
+# Publisher (real-time events)
+redis.publish("orders", json.dumps({"order_id": 123, "status": "shipped"}))
 
-# Subscriber
-pubsub = redis.pubsub()
-pubsub.subscribe("notifications")
+# Subscriber (instant notification)
 for message in pubsub.listen():
-    process(message)
+    notify_customer(message)
 ```
 
-**Use Cases**:
-- Real-time notifications
-- Chat applications
-- Event broadcasting
+**Redis Streams** (persistent):
+- Event sourcing
+- Activity feeds
+- IoT data ingestion
 
 ---
 
-## Slide 8: Core Redis Use Cases (cont.)
+## Slide 10: Redis Data Structures
 
-### 6️⃣ Distributed Locks
-
-```python
-# Acquire lock
-lock = redis.set("lock:resource", "owner1", nx=True, ex=30)
-
-# Release lock (with Lua for atomicity)
-if redis.get("lock:resource") == "owner1":
-    redis.delete("lock:resource")
-```
-
-**Use Cases**:
-- Prevent duplicate processing
-- Coordinate microservices
-- Leader election
+| Structure | Real-Time Use Case |
+|-----------|-------------------|
+| **String** | Caching, counters, feature flags |
+| **Hash** | User profiles, product catalog |
+| **List** | Job queues, activity feeds |
+| **Set** | Tags, unique visitors, fraud detection |
+| **Sorted Set** | Leaderboards, time-based data |
+| **Stream** | Event logs, message queues |
+| **JSON** | Complex documents (Redis module) |
+| **Search** | Full-text search (Redis module) |
+| **TimeSeries** | Metrics, IoT (Redis module) |
 
 ---
 
-## Slide 9: Redis Data Structures
+## Slide 11: Redis on Azure Today
 
-| Structure | Use Case | Example |
-|-----------|----------|---------|
-| **String** | Cache, counters | Page views, session data |
-| **Hash** | Objects | User profiles, configs |
-| **List** | Queues | Job queues, activity feeds |
-| **Set** | Unique items | Tags, online users |
-| **Sorted Set** | Rankings | Leaderboards, time series |
-| **Stream** | Event logs | Activity streams, IoT data |
-
----
-
-## Slide 10: Redis Anti-Patterns ⚠️
-
-| Anti-Pattern | Problem | Better Approach |
-|--------------|---------|-----------------|
-| **Large values (>100KB)** | Network latency, memory | Compress or chunk |
-| **KEYS * in production** | Blocks Redis | Use SCAN |
-| **No TTL on cache** | Memory leak | Always set expiration |
-| **Single huge key** | Hot spot | Shard across keys |
-| **Using as primary DB** | No durability guarantee | Use for cache/speed layer |
-
----
-
-## Slide 11: Redis on Azure - Current State
-
-### Two Products (Soon One)
+### Two Products → One Future
 
 | Product | Status | Based On |
 |---------|--------|----------|
 | **Azure Cache for Redis (ACR)** | ⚠️ Retiring | Community Redis |
 | **Azure Managed Redis (AMR)** | ✅ Future | Redis Enterprise |
 
-### Why the Change?
-- ACR = Single-threaded, limited features
-- AMR = Multi-threaded, enterprise features, better performance
+### AMR = Real-Time Data Platform on Azure
+- **Multi-threaded**: Full CPU utilization
+- **Redis 7.4**: Latest features
+- **Active Geo-Rep**: Real-time globally
+- **Modules**: Search, JSON, TimeSeries built-in
 
 ---
 
