@@ -11,7 +11,7 @@
 | Time | Duration | Section | Content |
 |------|----------|---------|---------|
 | 13:00 | 10 min | **Introduction** | Welcome, objectives, housekeeping |
-| 13:10 | 30 min | **Redis Use Cases** | Why Redis? Patterns & anti-patterns |
+| 13:10 | 30 min | **Redis Use Cases** | Redis - The Real-Time data platform |
 | 13:40 | 10 min | ☕ **Break** | |
 | 13:50 | 15 min | **The Burning Platform** | Retirement timeline, what is AMR |
 | 14:05 | 45 min | **Critical Differences** | 13 breaking changes deep dive |
