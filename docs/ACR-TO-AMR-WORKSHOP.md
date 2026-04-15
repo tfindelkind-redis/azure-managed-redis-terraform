@@ -10,14 +10,14 @@
 
 | Time | Duration | Section | Content |
 |------|----------|---------|---------|
-| 0:00 | 10 min | **Introduction** | Welcome, objectives, housekeeping |
-| 0:10 | 30 min | **Redis Use Cases** | Why Redis? Patterns & anti-patterns |
-| 0:40 | 10 min | ☕ **Break** | |
-| 0:50 | 15 min | **The Burning Platform** | Retirement timeline, what is AMR |
-| 1:05 | 45 min | **Critical Differences** | 13 breaking changes deep dive |
-| 1:50 | 10 min | ☕ **Break** | |
-| 2:00 | 20 min | **Migration & Next Steps** | Strategies, checklist, action items |
-| 2:20 | 10 min | **Q&A** | Open discussion |
+| 13:00 | 10 min | **Introduction** | Welcome, objectives, housekeeping |
+| 13:10 | 30 min | **Redis Use Cases** | Why Redis? Patterns & anti-patterns |
+| 13:40 | 10 min | ☕ **Break** | |
+| 13:50 | 15 min | **The Burning Platform** | Retirement timeline, what is AMR |
+| 14:05 | 45 min | **Critical Differences** | 13 breaking changes deep dive |
+| 14:50 | 10 min | ☕ **Break** | |
+| 15:00 | 20 min | **Migration & Next Steps** | Strategies, checklist, action items |
+| 15:20 | 10 min | **Q&A** | Open discussion |
 
 ---
 
