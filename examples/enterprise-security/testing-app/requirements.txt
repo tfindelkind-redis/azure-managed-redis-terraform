@@ -3,5 +3,5 @@ redis==5.3.0
 gunicorn==22.0.0
 python-dotenv==1.0.0
 azure-monitor-opentelemetry==1.6.4
-Werkzeug==3.0.6
+Werkzeug==3.1.4
 redis-entraid==1.0.0
