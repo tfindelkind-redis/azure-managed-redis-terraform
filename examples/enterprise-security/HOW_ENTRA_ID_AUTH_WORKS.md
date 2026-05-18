@@ -4,6 +4,17 @@
 
 This implementation uses **Microsoft Entra ID (formerly Azure AD)** for passwordless authentication to Azure Managed Redis, eliminating the need for access keys.
 
+If you want to run with Entra ID only, you still need an **access policy assignment** on the Redis database. Entra ID proves the app identity, but Redis still needs a data-plane authorization rule that says what that identity can do.
+
+In practice that means:
+
+1. Entra ID returns a token for the managed identity.
+2. Redis validates the token.
+3. The access policy assignment maps that identity to Redis permissions.
+4. Redis allows or denies commands based on that policy.
+
+Without the access policy, the token is valid but has no Redis permission binding, so connections fail even though authentication succeeded.
+
 ## 🔐 Authentication Flow
 
 ```mermaid
@@ -93,6 +104,8 @@ resource "azurerm_user_assigned_identity" "redis" {
 #### 2. Access Policy Assignment (Terraform)
 
 **CRITICAL:** The Azure Managed Redis access policy API is different from Azure Cache for Redis.
+
+This assignment is required for Entra ID-only authentication because it is the authorization layer. Authentication answers "who is this identity?"; the access policy answers "what is this identity allowed to do in Redis?".
 
 **Option 1: AzureRM Provider (v4.60.0+)**
 ```hcl
@@ -427,9 +440,9 @@ This means the managed identity doesn't have an access policy assignment.
   
 - **Access Policy Assignment** (via API):
   - Grants Redis data plane access
-  - **This is what allows authentication to work!**
+  - **This is what turns a valid Entra ID token into usable Redis permissions**
 
-Without the access policy, you'll get "invalid username-password pair" even with correct RBAC.
+Without the access policy, you'll get "invalid username-password pair" even with correct RBAC, because Redis has no permission mapping for the identity behind the token.
 
 ### Access Policy API Differences
 
@@ -448,6 +461,6 @@ Azure Managed Redis vs Azure Cache for Redis have **different APIs**:
 
 ---
 
-**Summary:** Entra ID authentication is simpler, more secure, and requires less code than traditional password-based authentication. The `redis-entraid` package handles all token management automatically. Just ensure you have BOTH the RBAC role assignment AND the access policy assignment configured correctly.
+**Summary:** Entra ID authentication is simpler, more secure, and requires less code than traditional password-based authentication. The `redis-entraid` package handles all token management automatically. Just ensure you have BOTH the RBAC role assignment AND the access policy assignment configured correctly, because Entra ID provides identity and the access policy provides Redis authorization.
 
 ```
