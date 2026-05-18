@@ -107,6 +107,8 @@ resource "azurerm_user_assigned_identity" "redis" {
 
 This assignment is required for Entra ID-only authentication because it is the authorization layer. Authentication answers "who is this identity?"; the access policy answers "what is this identity allowed to do in Redis?".
 
+The name `default` is not a hidden extra policy. It is the required built-in policy template name that Azure Managed Redis expects the assignment to reference.
+
 **Option 1: AzureRM Provider (v4.60.0+)**
 ```hcl
 resource "azurerm_managed_redis_access_policy_assignment" "app_identity" {
